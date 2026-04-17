@@ -45,10 +45,24 @@
 
   const stopDragging = () => isDragging = false;
   const closeLightbox = () => { isExpanded = false; isDragging = false; };
+
+  // Bloqueo estructural del scroll de la página al abrir el modal 360
+  $effect(() => {
+    if (isExpanded) document.body.style.overflow = 'hidden';
+    else document.body.style.overflow = '';
+    return () => { document.body.style.overflow = ''; };
+  });
+  
+  // Cierre con teclado
+  const handleKeydown = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') closeLightbox();
+  };
 </script>
 
+<svelte:window onkeydown={handleKeydown} />
+
 <div class="grid-card">
-  <div class="static-container" onclick={() => isExpanded = true}>
+  <div class="static-container" tabindex="0" role="button" aria-label="Abrir vista 360" onclick={() => isExpanded = true} onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && (isExpanded = true)}>
     <img 
       src="{path}{prefix}0.{extension}" 
       alt="Vista previa 360 de {title}" 
@@ -61,7 +75,7 @@
 </div>
 
 {#if isExpanded}
-  <div class="lightbox-backdrop" transition:fade={{ duration: 200 }} onclick={closeLightbox}>
+  <div class="lightbox-backdrop" role="dialog" aria-modal="true" transition:fade={{ duration: 200 }} onclick={closeLightbox}>
     
     <button class="close-btn" onclick={closeLightbox} aria-label="Cerrar">×</button>
 
@@ -102,6 +116,10 @@
     overflow: hidden;
     cursor: zoom-in;
     position: relative;
+    outline: none;
+  }
+  .static-container:focus-visible {
+    box-shadow: 0 0 0 3px var(--primary-green);
   }
   .static-container:hover { border-color: #555; }
 

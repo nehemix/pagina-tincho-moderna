@@ -18,10 +18,34 @@
 
   const closeImage = () => { selectedImage = null; };
 
-  // Permite cerrar la imagen presionando la tecla ESC
+  // Lógica de navegación estructural
+  let selectedIndex = $derived(selectedImage ? images.indexOf(selectedImage) : -1);
+
+  const nextImage = (e?: Event) => {
+    if (e) e.stopPropagation();
+    if (selectedIndex < images.length - 1) selectedImage = images[selectedIndex + 1];
+    else selectedImage = images[0];
+  };
+
+  const prevImage = (e?: Event) => {
+    if (e) e.stopPropagation();
+    if (selectedIndex > 0) selectedImage = images[selectedIndex - 1];
+    else selectedImage = images[images.length - 1];
+  };
+
+  // Controles de teclado extendidos
   const handleKeydown = (e: KeyboardEvent) => {
     if (e.key === 'Escape') closeImage();
+    if (selectedImage && e.key === 'ArrowRight') nextImage();
+    if (selectedImage && e.key === 'ArrowLeft') prevImage();
   };
+
+  // Bloqueo estructural del scroll de la página al abrir el modal
+  $effect(() => {
+    if (selectedImage) document.body.style.overflow = 'hidden';
+    else document.body.style.overflow = '';
+    return () => { document.body.style.overflow = ''; };
+  });
 </script>
 
 <!-- Escucha eventos del teclado para la tecla ESC -->
@@ -30,7 +54,12 @@
 {#if images.length > 0}
   <div class="gallery-row">
     {#each images as src}
-      <div class="gallery-item">
+      <div 
+        class="gallery-item" 
+        tabindex="0" 
+        role="button" 
+        aria-label="Abrir imagen"
+        onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && (selectedImage = src)}>
         <img 
           {src} 
           alt="Portfolio" 
@@ -48,15 +77,19 @@
 {/if}
 
 {#if selectedImage}
-  <div class="lightbox-backdrop" transition:fade={{ duration: 200 }} onclick={closeImage}>
+  <div class="lightbox-backdrop" role="dialog" aria-modal="true" transition:fade={{ duration: 200 }} onclick={closeImage}>
     <button class="close-btn" onclick={closeImage} aria-label="Cerrar">&times;</button>
     
+    <!-- Controles de navegación -->
+    <button class="nav-btn prev" onclick={prevImage} aria-label="Imagen anterior">&#10094;</button>
+    <button class="nav-btn next" onclick={nextImage} aria-label="Imagen siguiente">&#10095;</button>
+
     <img 
       src={selectedImage} 
       alt="Imagen ampliada" 
       class="expanded-img"
       onclick={(e) => e.stopPropagation()}
-      transition:scale={{ duration: 300, start: 0.9 }}
+      transition:scale={{ duration: 200, start: 0.95 }}
     />
   </div>
 {/if}
@@ -75,6 +108,10 @@
   .gallery-item {
     overflow: hidden;
     border-radius: 8px;
+    outline: none;
+  }
+  .gallery-item:focus-visible {
+    box-shadow: 0 0 0 3px var(--primary-green);
   }
   
   .gallery-img:hover { 
@@ -115,10 +152,34 @@
     background: rgba(255, 255, 255, 0.3);
     transform: scale(1.1); /* Leve animación */
   }
+  
+  /* Estructura de los botones de navegación */
+  .nav-btn {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 50px;
+    height: 50px;
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    font-size: 1.5rem;
+    border-radius: 50%;
+    cursor: pointer;
+    backdrop-filter: blur(5px);
+    transition: background 0.3s;
+    z-index: 4010;
+  }
+  .nav-btn:hover { background: rgba(255, 255, 255, 0.3); }
+  .nav-btn.prev { left: 20px; }
+  .nav-btn.next { right: 20px; }
 
   /* Ajustes Responsive para móviles */
   @media (max-width: 768px) {
     .close-btn { top: 15px; right: 15px; width: 40px; height: 40px; font-size: 2rem; }
+    .nav-btn { width: 40px; height: 40px; font-size: 1.2rem; }
+    .nav-btn.prev { left: 10px; }
+    .nav-btn.next { right: 10px; }
     .expanded-img { max-width: 95%; max-height: 85%; }
   }
 </style>

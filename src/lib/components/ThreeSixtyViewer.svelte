@@ -1,0 +1,162 @@
+<script lang="ts">
+  import { fade, scale } from 'svelte/transition';
+
+  // Props con Svelte 5 Runes
+  let { 
+    path, 
+    prefix = '', 
+    totalFrames, 
+    extension, 
+    title,
+    sensitivity = 10 
+  } = $props<{ 
+    path: string, 
+    prefix?: string,
+    totalFrames: number, 
+    extension: string,
+    title: string,
+    sensitivity?: number 
+  }>();
+
+  // Estados reactivos (Runes)
+  let currentIndex = $state(0);
+  let isDragging = $state(false);
+  let startX = $state(0);
+  let isExpanded = $state(false); // Estado para controlar el modal
+
+  // --- Lógica de Interacción ---
+  function handleStart(e: MouseEvent | TouchEvent) {
+    e.preventDefault(); // Previene comportamientos extraños del navegador
+    isDragging = true;
+    startX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+  }
+
+  function handleMove(e: MouseEvent | TouchEvent) {
+    if (!isDragging) return;
+    const currentX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const diff = startX - currentX;
+
+    if (Math.abs(diff) > sensitivity) {
+      const direction = diff > 0 ? -1 : 1;
+      currentIndex = (currentIndex + direction + totalFrames) % totalFrames;
+      startX = currentX;
+    }
+  }
+
+  const stopDragging = () => isDragging = false;
+  const closeLightbox = () => { isExpanded = false; isDragging = false; };
+</script>
+
+<div class="grid-card">
+  <div class="static-container" onclick={() => isExpanded = true}>
+    <img 
+      src="{path}{prefix}0.{extension}" 
+      alt="Vista previa 360 de {title}" 
+      class="static-img" 
+      loading="lazy" 
+    />
+    <div class="overlay"><span>🔍 Tocar para girar</span></div>
+  </div>
+  <p class="title">{title}</p>
+</div>
+
+{#if isExpanded}
+  <div class="lightbox-backdrop" transition:fade={{ duration: 200 }} onclick={closeLightbox}>
+    
+    <button class="close-btn" onclick={closeLightbox} aria-label="Cerrar">×</button>
+
+    <div 
+      class="viewer-container"
+      transition:scale={{ duration: 300, start: 0.95 }}
+      onmousedown={handleStart}
+      ontouchstart={handleStart}
+      onmousemove={handleMove}
+      ontouchmove={handleMove}
+      onmouseup={stopDragging}
+      onmouseleave={stopDragging}
+      ontouchend={stopDragging}
+      onclick={(e) => e.stopPropagation()} // Evita que se cierre al tocar el visor
+    >
+      <img 
+        src="{path}{prefix}{currentIndex}.{extension}" 
+        alt="Giro 360 de {title}" 
+        class="interactive-img"
+        draggable="false"
+        loading="eager"
+      />
+      
+      <div class="hint">Arrastrá para girar</div>
+    </div>
+  </div>
+{/if}
+
+<style>
+  /* --- Estilos Grilla (Estática) --- */
+  .grid-card { display: flex; flex-direction: column; align-items: center; }
+  
+  .static-container {
+    width: 100%;
+    aspect-ratio: 1/1;
+    background: transparent; /* Antes #000 */
+    border: none;            /* Antes 1px solid */
+    overflow: hidden;
+    cursor: zoom-in;
+    position: relative;
+  }
+  .static-container:hover { border-color: #555; }
+
+  .static-img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s; }
+  .static-container:hover .static-img { transform: scale(1.03); }
+
+  .overlay {
+    position: absolute; inset: 0; 
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .static-container:hover .overlay { opacity: 1; }
+  .overlay span { background: rgba(0,0,0,0.7); color: white; padding: 5px 15px; border-radius: 20px; font-size: 0.8rem; }
+
+  .title { color: #ccc; margin-top: 10px; font-size: 0.9rem; font-weight: bold; }
+
+  /* --- Estilos Lightbox (Interactivo) --- */
+  .lightbox-backdrop {
+    position: fixed; inset: 0; background: rgba(0, 0, 0, 0.95);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 2000; cursor: zoom-out;
+  }
+
+  .viewer-container {
+    width: 90vmin; 
+    height: 90vmin; 
+    max-width: 850px; 
+    max-height: 850px;
+    background: transparent; /* Antes #000 */
+    border: none;            /* Antes 1px solid */
+    box-shadow: none;        /* Borramos la sombra */
+    position: relative;
+    touch-action: none;
+  }
+  .viewer-container:active { cursor: grabbing; }
+
+  .interactive-img {
+    width: 100%; height: 100%; object-fit: contain;
+    pointer-events: none; /* Evita que el navegador intente arrastrar la imagen */
+    
+    /* SOLUCIÓN AL RESALTADO AZUL */
+    -webkit-user-select: none; /* Safari/Chrome */
+    user-select: none; /* Estándar */
+    -webkit-touch-callout: none; /* iOS Safari */
+  }
+
+  .hint {
+    position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%);
+    background: rgba(0,0,0,0.6); color: white; padding: 5px 15px;
+    border-radius: 20px; font-size: 0.75rem; pointer-events: none;
+  }
+
+  .close-btn {
+    position: absolute; top: 20px; right: 30px; background: none; border: none;
+    color: #888; font-size: 3rem; cursor: pointer; transition: color 0.3s;
+  }
+  .close-btn:hover { color: white; }
+</style>

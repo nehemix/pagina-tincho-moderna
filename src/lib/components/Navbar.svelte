@@ -3,6 +3,11 @@
 
 	// Estado para el menú mobile en Svelte 5
 	let isMenuOpen = $state(false);
+	
+	// Estado para rastrear el scroll
+	let scrollY = $state(0);
+	// El navbar se considerará "scrolleado" si bajamos más de 50px
+	let isScrolled = $derived(scrollY > 50);
 
 	const toggleMenu = () => {
 		isMenuOpen = !isMenuOpen;
@@ -22,7 +27,9 @@
 
 </script>
 
-<nav class="navbar">
+<svelte:window bind:scrollY />
+
+<nav class="navbar" class:scrolled={isScrolled || isMenuOpen}>
 	<div class="nav-container">
 		<a href="/" class="brand" onclick={closeMenu}>
 			<span class="first-name">MARTIN</span>
@@ -51,11 +58,16 @@
 		top: 0;
 		width: 100%;
 		height: 80px;
-		background: rgba(0, 0, 0, 0.85);
-		backdrop-filter: blur(10px);
+		background: transparent;
 		z-index: 3000;
 		display: flex;
 		align-items: center;
+		border-bottom: 1px solid transparent;
+		transition: background 0.4s ease, backdrop-filter 0.4s ease, border-color 0.4s ease;
+	}
+	.navbar.scrolled {
+		background: rgba(0, 0, 0, 0.85);
+		backdrop-filter: blur(10px);
 		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 	}
 
@@ -81,7 +93,7 @@
 		letter-spacing: -1px; /* Para que quede más compacto, como en la imagen */
 		text-transform: uppercase;
 	}
-	 {
+	.first-name {
 		color: #1b732a;
 		margin-right: 5px;
 	} /* Verde de tu captura */

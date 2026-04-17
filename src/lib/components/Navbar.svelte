@@ -17,8 +17,10 @@
 		{ href: '/industria', label: 'Industria' },
 		{ href: '/retratos', label: 'Retratos' },
 		{ href: '/personales', label: 'Personales' },
-		{ href: '/foto-360', label: 'Foto 360' }
+		{ href: '/foto-360', label: 'Foto 360' },
+		{ href: '/contacto', label: 'Contacto' }
 	];
+
 </script>
 
 <nav class="navbar">

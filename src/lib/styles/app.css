@@ -51,3 +51,36 @@ body {
     gap: 25px;
   }
 }
+
+/* --- Navbar (Diseño Moderno y Responsive) --- */
+.navbar-container {
+  display: flex;
+  justify-content: space-between; /* Logo a la izquierda, menú a la derecha */
+  align-items: center;
+  padding: 1rem 1.5rem; /* Padding para generar aire visual en móvil */
+  width: 100%;
+  gap: 2rem; /* Espacio horizontal mínimo asegurado entre logo y menú */
+  box-sizing: border-box;
+}
+
+.navbar-logo {
+  display: flex;
+  flex-direction: column; /* Maneja perfectamente el texto en dos líneas */
+  justify-content: center;
+  flex-shrink: 0; /* Evita que el logo se comprima y se deforme */
+}
+
+.navbar-menu {
+  display: flex;
+  align-items: center;
+  gap: 2rem; /* Espacio horizontal entre los propios links del menú */
+  gap: 24px; /* Espacio limpio entre los links del menú */
+  flex-grow: 1; /* Permite que el menú ocupe el resto del ancho disponible */
+  justify-content: flex-end; /* Fuerza los links del menú totalmente a la derecha */
+}
+
+@media (min-width: 768px) {
+  .navbar-container {
+    padding: 1.5rem 4rem; /* Mayor aire visual en los laterales para pantallas grandes */
+  }
+}

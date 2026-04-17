@@ -16,6 +16,24 @@ body {
   overflow-y: scroll; /* Fuerza la barra vertical siempre para evitar que el Navbar salte */
 }
 
+/* --- Custom Scrollbar (Estética Premium) --- */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+::-webkit-scrollbar-thumb {
+  background: #444;
+  border-radius: 10px;
+  border: 2px solid #1a1a1a; /* Crea un pequeño margen interno */
+  transition: background 0.3s ease;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-green);
+}
+/* ------------------------------------------- */
+
 /* Grilla responsive universal para tus galerías */
 .gallery-row {
   display: grid;

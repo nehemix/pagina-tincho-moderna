@@ -105,11 +105,31 @@
 		font-weight: 500;
 		text-transform: uppercase;
 		transition: color 0.3s;
+		position: relative;
+		padding-bottom: 5px;
+	}
+
+	/* Efecto de subrayado animado al pasar el mouse */
+	.nav-links a::after {
+		content: '';
+		position: absolute;
+		width: 0;
+		height: 2px;
+		bottom: 0;
+		left: 50%;
+		background-color: #1b732a;
+		transition: all 0.3s ease-in-out;
+		transform: translateX(-50%);
 	}
 
 	.nav-links a:hover,
 	.nav-links a.active {
 		color: #1b732a;
+	}
+	
+	.nav-links a:hover::after,
+	.nav-links a.active::after {
+		width: 100%;
 	}
 
 	/* --- HAMBURGUESA (Oculta en PC) --- */

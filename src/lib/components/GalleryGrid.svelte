@@ -74,9 +74,20 @@
     object-fit: cover;
     border-radius: 8px;
     cursor: zoom-in;
-    transition: transform 0.3s ease;
+    transition: transform 0.4s ease, box-shadow 0.4s ease;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
   }
-  .gallery-img:hover { transform: scale(1.02); }
+  
+  .gallery-item {
+    overflow: hidden;
+    border-radius: 8px;
+  }
+  
+  .gallery-img:hover { 
+    transform: scale(1.05); 
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.6);
+  }
+  
   .error-msg { color: white; text-align: center; padding: 50px; }
   .lightbox-backdrop {
     position: fixed; inset: 0; background: rgba(0, 0, 0, 0.9);

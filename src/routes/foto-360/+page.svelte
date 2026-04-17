@@ -21,6 +21,5 @@
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 30px;
     padding: 120px 20px;
-    background: #000;
   }
 </style>

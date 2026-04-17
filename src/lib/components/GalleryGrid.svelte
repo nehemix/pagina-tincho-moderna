@@ -62,12 +62,6 @@
 {/if}
 
 <style>
-  .gallery-row {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 15px;
-    padding: 20px;
-  }
   .gallery-img {
     width: 100%;
     aspect-ratio: 1/1;

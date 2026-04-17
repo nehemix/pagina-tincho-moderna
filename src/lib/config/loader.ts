@@ -1,11 +1,22 @@
 // src/lib/config/loader.ts
 
-// Esta función escanea todas las carpetas dentro de static y devuelve las rutas
-// svelte-ignore a11y_no_static_element_interactions
-export const autoLoadImages = () => {
-  // Ampliamos los formatos e incluimos mayúsculas por si los archivos se guardaron como .JPG o .PNG
-  const modules = import.meta.glob('/static/**/*.{webp,jpg,jpeg,png,svg,gif,avif,WEBP,JPG,JPEG,PNG,SVG,GIF,AVIF}');
-  
-  // Quitamos "/static" y aplicamos encodeURI para evitar que los espacios en blanco rompan la ruta
-  return Object.keys(modules).map((path) => encodeURI(path.replace('/static', '')));
+// Le añadimos el parámetro "folder" para que la función nos devuelva las imágenes ya filtradas.
+export const autoLoadImages = async (folder?: string, customFetch: typeof fetch = fetch): Promise<string[]> => {
+  try {
+    const res = await customFetch('/api/images');
+    if (!res.ok) throw new Error(`Error de la API: ${res.status}`);
+    
+    const { images } = await res.json();
+    let result = images || [];
+
+    // Si le pasamos un nombre de carpeta, filtramos el array de imágenes
+    if (folder) {
+        result = result.filter((img: string) => img.toLowerCase().includes(`/${folder.toLowerCase()}/`));
+    }
+    
+    return result;
+  } catch (error) {
+    console.error("Error cargando imágenes desde la API:", error);
+    return [];
+  }
 };

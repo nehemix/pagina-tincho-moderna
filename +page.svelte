@@ -1,10 +1,12 @@
 <script lang="ts">
-  import { autoLoadImages } from '$lib/config/loader';
   import { galleryConfig } from '$lib/config/gallery';
 
+  // Los datos ahora vienen del loader (+page.ts)
+  let { data } = $props();
+
   // Cargamos las imágenes iniciales
-  let allImages = $state(autoLoadImages());
-  
+  let allImages = $state(data.images || []);
+
   // Estados de la interfaz
   let activeTab = $state<'normales' | '360'>('normales');
   let isUploading = $state(false);
@@ -28,6 +30,13 @@
     selectedFolder = folderOptions[0].value;
   }
 
+  // Función para refrescar la lista de imágenes desde el servidor
+  async function refreshImages() {
+    const res = await fetch('/api/images');
+    const { images } = await res.json();
+    allImages = images;
+  }
+
   // Función para subir una imagen
   async function uploadImage(e: Event) {
     e.preventDefault();
@@ -42,7 +51,7 @@
     const data = await res.json();
 
     if (data.success) {
-      allImages = [...allImages, data.path]; // Actualiza la vista al instante
+      await refreshImages(); // Recargamos la lista real del servidor
       fileInput.value = ''; // Resetea el input
       alert('Imagen subida con éxito!');
     } else {
@@ -63,7 +72,7 @@
     
     const data = await res.json();
     if (data.success) {
-      allImages = allImages.filter(img => img !== imagePath); // Quita la imagen de la vista
+      await refreshImages(); // Recargamos la lista real del servidor
     } else {
       alert('Error al borrar: ' + data.error);
     }
@@ -74,59 +83,66 @@
   <title>Admin - Tincho Moderna</title>
 </svelte:head>
 
-<div class="admin-container">
-  <div class="header">
-    <h1>Panel de Administración</h1>
-    <p>Gestiona las fotos de tu portafolio en tiempo real.</p>
+{#if data.error}
+  <div class="admin-container" style="text-align: center; color: #ff5252;">
+    <h2>Error al cargar el panel</h2>
+    <p>{data.error}</p>
   </div>
-
-  <!-- Controles de Subida -->
-  <div class="upload-panel">
-    <div class="tabs">
-      <button class:active={activeTab === 'normales'} onclick={() => switchTab('normales')}>Imágenes Normales</button>
-      <button class:active={activeTab === '360'} onclick={() => switchTab('360')}>Imágenes 360°</button>
+{:else}
+  <div class="admin-container">
+    <div class="header">
+      <h1>Panel de Administración</h1>
+      <p>Gestiona las fotos de tu portafolio en tiempo real.</p>
     </div>
 
-    <form onsubmit={uploadImage} class="upload-form">
-      <div class="input-group">
-        <label for="folder">Seleccionar Carpeta Destino:</label>
-        <select id="folder" bind:value={selectedFolder}>
-          {#each folderOptions as option}
-            <option value={option.value}>{option.label}</option>
-          {/each}
-        </select>
-      </div>
-      
-      <div class="input-group">
-        <label for="file">Elegir Archivo:</label>
-        <input type="file" id="file" bind:this={fileInput} accept="image/webp, image/jpeg, image/png" />
+    <!-- Controles de Subida -->
+    <div class="upload-panel">
+      <div class="tabs">
+        <button class:active={activeTab === 'normales'} onclick={() => switchTab('normales')}>Imágenes Normales</button>
+        <button class:active={activeTab === '360'} onclick={() => switchTab('360')}>Imágenes 360°</button>
       </div>
 
-      <button type="submit" class="btn-upload" disabled={isUploading}>
-        {isUploading ? 'Subiendo archivo...' : 'Subir Imagen'}
-      </button>
-    </form>
-  </div>
-
-  <!-- Galería Administrativa -->
-  <h2 class="gallery-title">
-    {activeTab === 'normales' ? 'Tus Fotografías' : 'Tus Fotogramas 360°'}
-  </h2>
-  
-  <div class="admin-gallery">
-    {#each activeTab === 'normales' ? normalImages : threeSixtyImages as img}
-      <div class="image-card">
-        <img src={img} alt="Miniatura" loading="lazy" />
-        <div class="image-overlay">
-          <p class="img-path">{img.split('/').pop()}</p>
-          <button class="btn-delete" onclick={() => deleteImage(img)} aria-label="Borrar imagen">
-            🗑️ Eliminar
-          </button>
+      <form onsubmit={uploadImage} class="upload-form">
+        <div class="input-group">
+          <label for="folder">Seleccionar Carpeta Destino:</label>
+          <select id="folder" bind:value={selectedFolder}>
+            {#each folderOptions as option}
+              <option value={option.value}>{option.label}</option>
+            {/each}
+          </select>
         </div>
-      </div>
-    {/each}
+        
+        <div class="input-group">
+          <label for="file">Elegir Archivo:</label>
+          <input type="file" id="file" bind:this={fileInput} accept="image/webp, image/jpeg, image/png" />
+        </div>
+
+        <button type="submit" class="btn-upload" disabled={isUploading}>
+          {isUploading ? 'Subiendo archivo...' : 'Subir Imagen'}
+        </button>
+      </form>
+    </div>
+
+    <!-- Galería Administrativa -->
+    <h2 class="gallery-title">
+      {activeTab === 'normales' ? 'Tus Fotografías' : 'Tus Fotogramas 360°'}
+    </h2>
+    
+    <div class="admin-gallery">
+      {#each activeTab === 'normales' ? normalImages : threeSixtyImages as img (img)}
+        <div class="image-card">
+          <img src={img} alt="Miniatura" loading="lazy" />
+          <div class="image-overlay">
+            <p class="img-path">{img.split('/').pop()}</p>
+            <button class="btn-delete" onclick={() => deleteImage(img)} aria-label="Borrar imagen">
+              🗑️ Eliminar
+            </button>
+          </div>
+        </div>
+      {/each}
+    </div>
   </div>
-</div>
+{/if}
 
 <style>
   .admin-container {

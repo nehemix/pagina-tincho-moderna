@@ -1,0 +1,65 @@
+<script lang="ts">
+  import type { PageData } from './$types';
+  let { data }: { data: PageData & { videos: { id: string }[] } } = $props();
+</script>
+
+<section class="container videos-section">
+  <h1 class="page-title">Galería de Videos</h1>
+
+  {#if data.videos && data.videos.length > 0}
+    <div class="video-grid">
+      {#each data.videos as video}
+        <div class="video-item">
+          <a href="https://youtu.be/{video.id}" target="_blank">
+            <img 
+              src="https://img.youtube.com/vi/{video.id}/hqdefault.jpg" 
+              alt="Video Portfolio" 
+              loading="lazy" 
+            />
+            <div class="play-icon">▶</div>
+          </a>
+        </div>
+      {/each}
+    </div>
+  {:else}
+    <p class="empty-msg">Aún no se han agregado videos a la galería.</p>
+  {/if}
+</section>
+
+<style>
+  .videos-section {
+    padding: 120px 20px 60px; /* Espacio para que no lo tape el navbar */
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .page-title {
+    text-align: center;
+    color: var(--primary-green, #1b732a);
+    font-size: 2.5rem;
+    margin-bottom: 40px;
+  }
+  .video-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+  }
+  .video-item {
+    position: relative;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+  }
+  .video-item img {
+    width: 100%;
+    display: block;
+    transition: var(--transition-smooth, all 0.3s ease);
+  }
+  .video-item:hover img { transform: scale(1.05); filter: brightness(0.8); }
+  .play-icon {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    font-size: 3rem; color: white; opacity: 0.8; pointer-events: none;
+    transition: all 0.3s ease;
+  }
+  .video-item:hover .play-icon { opacity: 1; transform: translate(-50%, -50%) scale(1.1); color: var(--primary-green, #1b732a); }
+  .empty-msg { color: #aaa; text-align: center; padding: 50px 20px; font-size: 1.2rem; }
+</style>

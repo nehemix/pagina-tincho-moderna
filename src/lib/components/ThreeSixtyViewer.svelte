@@ -3,22 +3,17 @@
 
   // Props con Svelte 5 Runes
   let { 
-    path, 
-    prefix = '', 
-    totalFrames, 
-    extension, 
+    images = [],
     title,
     sensitivity = 10 
   } = $props<{ 
-    path: string, 
-    prefix?: string,
-    totalFrames: number, 
-    extension: string,
+    images: string[],
     title: string,
     sensitivity?: number 
   }>();
 
   // Estados reactivos (Runes)
+  let totalFrames = $derived(images.length);
   let currentIndex = $state(0);
   let isDragging = $state(false);
   let startX = $state(0);
@@ -64,14 +59,13 @@
 <div class="grid-card">
   <div class="static-container" tabindex="0" role="button" aria-label="Abrir vista 360" onclick={() => isExpanded = true} onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && (isExpanded = true)}>
     <img 
-      src="{path}{prefix}0.{extension}" 
+      src={images[0]} 
       alt="Vista previa 360 de {title}" 
       class="static-img" 
       loading="lazy" 
     />
     <div class="overlay"><span>🔍 Tocar para girar</span></div>
   </div>
-  <p class="title">{title}</p>
 </div>
 
 {#if isExpanded}
@@ -92,7 +86,7 @@
       onclick={(e) => e.stopPropagation()} // Evita que se cierre al tocar el visor
     >
       <img 
-        src="{path}{prefix}{currentIndex}.{extension}" 
+        src={images[currentIndex]} 
         alt="Giro 360 de {title}" 
         class="interactive-img"
         draggable="false"

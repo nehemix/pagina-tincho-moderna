@@ -1,20 +1,8 @@
 <script lang="ts">
   import { fade, scale } from 'svelte/transition';
 
-  let { categoryId } = $props<{ categoryId: string }>();
+  let { images } = $props<{ images: string[] }>();
   let selectedImage = $state<string | null>(null);
-
-  // 1. Escaneamos TODO lo que hay en static de forma automática
-  const allModules = import.meta.glob('/static/**/*.{webp,jpg,jpeg,png}', { 
-    eager: true, 
-    query: '?url', 
-    import: 'default' 
-  });
-  
-  // 2. Filtramos solo los que están en la carpeta que coincide con categoryId
-  const images = Object.values(allModules)
-    .map((path: any) => path.replace('/static', ''))
-    .filter(path => path.includes(`/${categoryId}/`));
 
   const closeImage = () => { selectedImage = null; };
 
@@ -59,31 +47,35 @@
         tabindex="0" 
         role="button" 
         aria-label="Abrir imagen"
-        onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && (selectedImage = src)}>
+        onclick={() => (selectedImage = src)}
+        onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectedImage = src; } }}>
         <img 
           {src} 
           alt="Portfolio" 
           class="gallery-img" 
           loading="lazy" 
-          onclick={() => (selectedImage = src)} 
         />
       </div>
     {/each}
   </div>
 {:else}
   <div class="error-msg">
-    <p>No se encontraron fotos en: <strong>static/{categoryId}/</strong></p>
+    <p>No se encontraron fotos para esta categoría.</p>
   </div>
 {/if}
 
 {#if selectedImage}
-  <div class="lightbox-backdrop" role="dialog" aria-modal="true" transition:fade={{ duration: 200 }} onclick={closeImage}>
+  <!-- svelte-ignore a11y_click_events_have_key_events -->
+  <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+  <div class="lightbox-backdrop" role="dialog" aria-modal="true" tabindex="-1" transition:fade={{ duration: 200 }} onclick={closeImage}>
     <button class="close-btn" onclick={closeImage} aria-label="Cerrar">&times;</button>
     
     <!-- Controles de navegación -->
     <button class="nav-btn prev" onclick={prevImage} aria-label="Imagen anterior">&#10094;</button>
     <button class="nav-btn next" onclick={nextImage} aria-label="Imagen siguiente">&#10095;</button>
 
+    <!-- svelte-ignore a11y_click_events_have_key_events -->
+    <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
     <img 
       src={selectedImage} 
       alt="Imagen ampliada" 

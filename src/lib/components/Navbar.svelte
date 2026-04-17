@@ -22,6 +22,7 @@
 		{ href: '/retratos', label: 'Retratos' },
 		{ href: '/personales', label: 'Personales' },
 		{ href: '/foto-360', label: 'Foto 360' },
+		{ href: '/videos', label: 'Videos' },
 		{ href: '/contacto', label: 'Contacto' }
 	];
 

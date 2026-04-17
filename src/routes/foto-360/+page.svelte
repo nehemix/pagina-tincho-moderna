@@ -1,19 +1,21 @@
 <script lang="ts">
   import ThreeSixtyViewer from '$lib/components/ThreeSixtyViewer.svelte';
-  import { galleryConfig } from '$lib/config/gallery';
+  import type { PageData } from './$types';
+  let { data } = $props();
 </script>
 
-<div class="sirv-grid">
-  {#each galleryConfig.threeSixtySpins as spin}
-    <ThreeSixtyViewer 
-      path={spin.path}
-      prefix={spin.prefix}
-      totalFrames={spin.frames}
-      extension={spin.extension}
-      title={spin.title} 
-    />
-  {/each}
-</div>
+{#if data.error}
+  <p class="error-msg">{data.error}</p>
+{:else if data.spins.length === 0}
+  <p class="error-msg">No se encontraron imágenes 360°.</p>
+{:else}
+  <div class="sirv-grid">
+    {#each data.spins as spin}
+      <!-- Pasamos el array de imágenes directamente al componente -->
+      <ThreeSixtyViewer images={spin.images} title={spin.title} />
+    {/each}
+  </div>
+{/if}
 
 <style>
   .sirv-grid {
@@ -22,4 +24,5 @@
     gap: 30px;
     padding: 120px 20px;
   }
+  .error-msg { color: white; text-align: center; padding: 120px 20px; }
 </style>

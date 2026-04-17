@@ -81,7 +81,7 @@
 		letter-spacing: -1px; /* Para que quede más compacto, como en la imagen */
 		text-transform: uppercase;
 	}
-	.first-name {
+	 {
 		color: #1b732a;
 		margin-right: 5px;
 	} /* Verde de tu captura */

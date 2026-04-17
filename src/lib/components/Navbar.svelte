@@ -12,7 +12,6 @@
 	};
 
 	const navLinks = [
-		{ href: '/', label: 'Inicio' },
 		{ href: '/producto', label: 'Producto' },
 		{ href: '/industria', label: 'Industria' },
 		{ href: '/retratos', label: 'Retratos' },

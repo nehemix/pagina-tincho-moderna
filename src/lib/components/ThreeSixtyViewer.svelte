@@ -122,7 +122,7 @@
   .lightbox-backdrop {
     position: fixed; inset: 0; background: rgba(0, 0, 0, 0.95);
     display: flex; align-items: center; justify-content: center;
-    z-index: 2000; cursor: zoom-out;
+    z-index: 4000; cursor: zoom-out;
   }
 
   .viewer-container {
@@ -155,8 +155,33 @@
   }
 
   .close-btn {
-    position: absolute; top: 20px; right: 30px; background: none; border: none;
-    color: #888; font-size: 3rem; cursor: pointer; transition: color 0.3s;
+    position: fixed; 
+    top: 20px; 
+    right: 30px; 
+    width: 50px; 
+    height: 50px; 
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.2); 
+    color: white; 
+    font-size: 2.5rem; 
+    font-weight: 300; 
+    border-radius: 50%; 
+    cursor: pointer; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    padding: 0; 
+    backdrop-filter: blur(5px);
+    transition: background 0.3s, transform 0.3s; 
+    z-index: 4010; 
   }
-  .close-btn:hover { color: white; }
+  .close-btn:hover { 
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1); 
+  }
+
+  /* Ajustes Responsive para móviles */
+  @media (max-width: 768px) {
+    .close-btn { top: 15px; right: 15px; width: 40px; height: 40px; font-size: 2rem; }
+  }
 </style>

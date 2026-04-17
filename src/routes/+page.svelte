@@ -34,6 +34,13 @@
   
   <!-- Capa oscura para que el texto del Navbar se lea bien siempre -->
   <div class="overlay"></div>
+
+  <!-- Contenido Central de Impacto -->
+  <div class="hero-content">
+    <h1>Capturando la esencia<br>de cada detalle</h1>
+    <p>Fotografía Profesional & Creación de Contenido</p>
+    <a href="/producto" class="btn-cta">VER PORTAFOLIO</a>
+  </div>
 </section>
 
 <style>
@@ -67,5 +74,60 @@
     width: 100%;
     height: 100%;
     background: rgba(0, 0, 0, 0.4); /* Oscurece la foto 40% */
+  }
+
+  /* --- Diseño de Interfaz y Espaciado Central --- */
+  .hero-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    text-align: center;
+    width: 90%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px; /* Espaciado aireado entre elementos */
+  }
+  .hero-content h1 {
+    font-family: 'Lato', sans-serif;
+    font-size: clamp(2rem, 5vw, 4.5rem);
+    font-weight: 300;
+    letter-spacing: 1px;
+    margin: 0;
+    text-shadow: 0 4px 15px rgba(0, 0, 0, 0.8); /* Asegura contraste sobre fotos blancas */
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.4); /* Sombra más suave para no engrosar la letra fina */
+    line-height: 1.1;
+  }
+  .hero-content p {
+    font-family: system-ui, -apple-system, sans-serif;
+    font-size: clamp(1rem, 2.5vw, 1.4rem);
+    color: #e0e0e0;
+    font-weight: 300;
+    letter-spacing: 1px;
+    margin: 0 0 15px 0;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+  }
+  .btn-cta {
+    display: inline-block;
+    padding: 15px 45px;
+    color: white;
+    text-decoration: none;
+    font-family: system-ui, -apple-system, sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+    border: 2px solid var(--primary-green);
+    border-radius: 50px; /* Botón ovalado elegante */
+    background: rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(4px);
+    box-shadow: 0 0 20px rgba(11, 102, 35, 0.4); /* Resplandor iluminado verde */
+    transition: all 0.4s ease;
+  }
+  .btn-cta:hover {
+    background: var(--primary-green);
+    box-shadow: 0 0 30px rgba(11, 102, 35, 0.8);
+    transform: translateY(-3px);
   }
 </style>

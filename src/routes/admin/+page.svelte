@@ -14,7 +14,7 @@
   let allImages = $state(data.images || []);
 
   // Estados de la interfaz
-  let activeTab = $state<'normales' | '360' | 'videos'>('normales');
+  let activeTab = $state<'normales' | '360' | 'videos' | 'inicio'>('normales');
   let isUploading = $state(false);
   let selectedExistingFolder = $state('__NEW__'); // Selector de carpetas, por defecto Nueva Carpeta
   let newFolderName = $state(''); // Nombre para nueva carpeta
@@ -52,11 +52,11 @@
     return Object.keys(groups).sort().reduce((acc, key) => { acc[key] = groups[key]; return acc; }, {} as Record<string, string[]>);
   }
 
-  let normalGroups = $derived(groupImagesByFolder(allImages.filter(img => !img.includes('/360/'))));
+  let normalGroups = $derived(groupImagesByFolder(allImages.filter(img => !img.includes('/360/') && !img.includes('/inicio/'))));
   let threeSixtyGroups = $derived(groupImagesByFolder(allImages.filter(img => img.includes('/360/')), '360/'));
-  let folderOptions = $derived(Object.keys(activeTab === 'normales' ? normalGroups : threeSixtyGroups).filter(f => f !== 'Raíz'));
+  let folderOptions = $derived(Object.keys(activeTab === 'normales' ? normalGroups : activeTab === '360' ? threeSixtyGroups : {}).filter(f => f !== 'Raíz'));
 
-  function switchTab(tab: 'normales' | '360' | 'videos') {
+  function switchTab(tab: 'normales' | '360' | 'videos' | 'inicio') {
     activeTab = tab;
     selectedImages = []; // Limpia la selección al cambiar de pestaña
     selectedExistingFolder = '__NEW__'; 
@@ -112,10 +112,15 @@
     if (!fileInput?.files || fileInput.files.length === 0) return toast.warning('Por favor, selecciona al menos un archivo.');
     const allFiles = Array.from(fileInput.files);
 
-    let targetFolder = selectedExistingFolder === '__NEW__' ? newFolderName.trim() : selectedExistingFolder;
-    if (!targetFolder) return toast.warning('Por favor, selecciona o ingresa el nombre de la carpeta.');
-    
-    if (activeTab === '360') targetFolder = `360/${targetFolder}`;
+    let targetFolder = '';
+    if (activeTab === 'inicio') {
+      targetFolder = 'inicio';
+    } else {
+      targetFolder = selectedExistingFolder === '__NEW__' ? newFolderName.trim() : selectedExistingFolder;
+      if (!targetFolder) return toast.warning('Por favor, selecciona o ingresa el nombre de la carpeta.');
+      
+      if (activeTab === '360') targetFolder = `360/${targetFolder}`;
+    }
 
     isUploading = true;
     try {
@@ -285,6 +290,7 @@
     <div class="upload-panel">
       <div class="tabs">
         <button class="btn-refresh" onclick={() => activeTab === 'videos' ? refreshVideos(true) : refreshImages(true)}>🔄 Refrescar</button>
+        <button class:active={activeTab === 'inicio'} onclick={() => switchTab('inicio')}>Inicio (Slider)</button>
         <button class:active={activeTab === 'normales'} onclick={() => switchTab('normales')}>Imágenes Normales</button>
         <button class:active={activeTab === '360'} onclick={() => switchTab('360')}>Imágenes 360°</button>
         <button class:active={activeTab === 'videos'} onclick={() => switchTab('videos')}>Videos</button>
@@ -302,21 +308,23 @@
         </form>
       {:else}
         <form onsubmit={uploadImage} class="upload-form">
-          <div class="input-group">
-            <label for="existingFolder">Seleccionar o crear carpeta:</label>
-            <select id="existingFolder" bind:value={selectedExistingFolder} class="folder-select">
-              {#each folderOptions as folder}
-                <option value={folder}>📁 {folder}</option>
-              {/each}
-              <option value="__NEW__">➕ Crear nueva carpeta...</option>
-            </select>
-          </div>
-          
-          {#if selectedExistingFolder === '__NEW__'}
-            <div class="input-group" transition:slide={{duration: 200}}>
-              <label for="newFolder">Nombre de la nueva carpeta:</label>
-              <input type="text" id="newFolder" bind:value={newFolderName}  required />
+          {#if activeTab !== 'inicio'}
+            <div class="input-group">
+              <label for="existingFolder">Seleccionar o crear carpeta:</label>
+              <select id="existingFolder" bind:value={selectedExistingFolder} class="folder-select">
+                {#each folderOptions as folder}
+                  <option value={folder}>📁 {folder}</option>
+                {/each}
+                <option value="__NEW__">➕ Crear nueva carpeta...</option>
+              </select>
             </div>
+            
+            {#if selectedExistingFolder === '__NEW__'}
+              <div class="input-group" transition:slide={{duration: 200}}>
+                <label for="newFolder">Nombre de la nueva carpeta:</label>
+                <input type="text" id="newFolder" bind:value={newFolderName}  required />
+              </div>
+            {/if}
           {/if}
           
           <div class="input-group drop-zone {isDraggingOver ? 'dragging' : ''}"
@@ -336,7 +344,7 @@
 
     <!-- Galería Administrativa -->
     <h2 class="gallery-title">
-      {activeTab === 'normales' ? 'Tus Fotografías' : activeTab === '360' ? 'Tus Fotogramas 360°' : 'Tus Videos (YouTube)'}
+      {activeTab === 'normales' ? 'Tus Fotografías' : activeTab === '360' ? 'Tus Fotogramas 360°' : activeTab === 'videos' ? 'Tus Videos (YouTube)' : 'Fotos del Slider de Inicio'}
     </h2>
 
     <!-- Panel de acciones en lote -->
@@ -400,6 +408,12 @@
       {#each Object.entries(normalGroups) as [folderName, images]}
         {@render folderAccordion(folderName, images, false)}
       {/each}
+    {:else if activeTab === 'inicio'}
+      <div class="admin-gallery">
+        {#each allImages.filter(img => img.includes('/inicio/')) as img (img)}
+          {@render imageCard(img)}
+        {/each}
+      </div>
     {:else if activeTab === 'videos'}
       <div class="admin-gallery">
         {#each allVideos as video (video.id)}

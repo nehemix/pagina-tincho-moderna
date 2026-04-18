@@ -20,9 +20,16 @@
 <style>
   .sirv-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 30px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
     padding: 120px 20px;
+  }
+
+  @media (min-width: 768px) {
+    .sirv-grid {
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 30px;
+    }
   }
   .error-msg { color: white; text-align: center; padding: 120px 20px; }
 </style>

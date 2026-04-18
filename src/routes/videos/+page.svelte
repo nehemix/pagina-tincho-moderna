@@ -40,17 +40,32 @@
   }
   .video-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  @media (min-width: 768px) {
+    .video-grid {
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
   }
   .video-item {
     position: relative;
     border-radius: 10px;
     overflow: hidden;
     box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    aspect-ratio: 16 / 9;
+  }
+  .video-item a {
+    display: block;
+    width: 100%;
+    height: 100%;
   }
   .video-item img {
     width: 100%;
+    height: 100%;
+    object-fit: cover;
     display: block;
     transition: var(--transition-smooth, all 0.3s ease);
   }

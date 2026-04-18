@@ -40,7 +40,7 @@
   /* Sección de contacto */
   .contact-section {
     background: radial-gradient(circle at top center, #2a2a2a 0%, #111 100%);
-    padding: 80px 20px;
+    padding: 20px 20px;
     text-align: center;
     font-family: 'Arial', sans-serif;
     margin-top: 80px; /* Espacio para que no se solape con el navbar */
@@ -71,11 +71,11 @@
   }
 
   .header-text {
-    margin-bottom: 60px;
+    margin-bottom: 30px;
   }
 
   .section-title {
-    font-size: 2.5rem;
+    font-size: 2rem;
     color: var(--primary-green);
     margin-bottom: 10px;
     text-transform: uppercase;
@@ -83,7 +83,7 @@
   }
 
   .subtitle {
-    font-size: 1.1rem;
+    font-size: 1rem;
     color: #aaa;
   }
 
@@ -96,7 +96,7 @@
   .contact-info {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 30px;
+    gap: 15px;
     width: 100%;
   }
 
@@ -105,7 +105,7 @@
     background: rgba(30, 30, 30, 0.6);
     border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: 16px;
-    padding: 40px 20px;
+    padding: 25px 15px;
     transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
     backdrop-filter: blur(10px);
     display: flex;
@@ -120,32 +120,32 @@
   }
 
   .icon-wrapper {
-    width: 60px;
-    height: 60px;
+    width: 45px;
+    height: 45px;
     background: rgba(11, 102, 35, 0.1);
     color: var(--primary-green);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
   }
 
   .icon-wrapper svg {
-    width: 30px;
-    height: 30px;
+    width: 24px;
+    height: 24px;
   }
 
   .contact-card h4 {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     color: #fff;
-    margin-bottom: 10px;
+    margin-bottom: 5px;
     text-transform: uppercase;
     letter-spacing: 1px;
   }
 
   .contact-card p {
-    font-size: 1rem;
+    font-size: 0.95rem;
     color: #bbb;
     margin: 0;
   }

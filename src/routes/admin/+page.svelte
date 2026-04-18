@@ -367,7 +367,7 @@
                ondragleave={() => isDraggingOver = false}
                ondrop={(e) => { e.preventDefault(); isDraggingOver = false; handleDrop(e); }}>
             <label for="file">Elegir o arrastrar archivo(s) aquí:</label>
-            <input type="file" id="file" name="files" bind:this={fileInput} accept="image/webp, image/jpeg, image/png" multiple class="file-input" />
+            <input type="file" id="file" name="files" bind:this={fileInput} accept="image/avif" multiple class="file-input" />
           </div>
 
           <button type="submit" class="btn-upload" disabled={isUploading}>

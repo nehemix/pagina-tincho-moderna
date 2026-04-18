@@ -123,7 +123,8 @@ export const POST: RequestHandler = async ({ request }) => {
         // y asociamos cada archivo válido con su ruta para que no se desincronicen.
         const validUploads = [];
         for (let i = 0; i < files.length; i++) {
-            if (files[i].size > 0) {
+            const isAvif = files[i].name.toLowerCase().endsWith('.avif') || files[i].type === 'image/avif';
+            if (files[i].size > 0 && isAvif) {
                 validUploads.push({
                     file: files[i],
                     relativePath: (paths && paths[i]) ? paths[i] : files[i].name
@@ -132,7 +133,7 @@ export const POST: RequestHandler = async ({ request }) => {
         }
 
         if (validUploads.length === 0) {
-            return json({ success: false, error: 'No se han subido archivos válidos.' }, { status: 400 });
+            return json({ success: false, error: 'No se han subido archivos válidos. Solo se permite formato AVIF.' }, { status: 400 });
         }
         
         // Medida de seguridad para evitar que se escriba fuera del directorio de imágenes

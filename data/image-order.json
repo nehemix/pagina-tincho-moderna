@@ -321,9 +321,6 @@
   "/images/360/zapatilla/img_0_0_7.webp",
   "/images/360/zapatilla/img_0_0_8.webp",
   "/images/360/zapatilla/img_0_0_9.webp",
-  "/images/inicio/foto4.webp",
-  "/images/inicio/foto30.webp",
-  "/images/inicio/foto-1.webp",
   "/images/industria/foto-1.avif",
   "/images/industria/foto-10.avif",
   "/images/industria/foto-11.avif",
@@ -409,5 +406,8 @@
   "/images/retratos/foto-6.avif",
   "/images/retratos/foto-7.avif",
   "/images/retratos/foto-8.avif",
-  "/images/retratos/foto-9.avif"
+  "/images/retratos/foto-9.avif",
+  "/images/inicio/foto4.avif",
+  "/images/inicio/foto-1.avif",
+  "/images/inicio/foto32.avif"
 ]

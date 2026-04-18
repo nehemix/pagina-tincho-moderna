@@ -4,7 +4,6 @@
 </script>
 
 <section class="container videos-section">
-  <h1 class="page-title">Galería de Videos</h1>
 
   {#if data.videos && data.videos.length > 0}
     <div class="video-grid">

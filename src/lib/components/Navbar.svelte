@@ -201,7 +201,7 @@
 	@media (max-width: 1100px) {
 		.navbar {
 			height: auto;
-			padding: 15px 0;
+			padding: 30px 0 15px 0;
 		}
 
 		.nav-container {

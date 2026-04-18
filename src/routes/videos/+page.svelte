@@ -28,7 +28,7 @@
 
 <style>
   .videos-section {
-    padding: 120px 20px 60px; /* Espacio para que no lo tape el navbar */
+    padding: 185px 20px 60px; /* Ajuste para compensar el navbar más bajo */
     max-width: 1200px;
     margin: 0 auto;
   }
@@ -48,6 +48,12 @@
     .video-grid {
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       gap: 20px;
+    }
+  }
+
+  @media (min-width: 1100px) {
+    .videos-section {
+      padding-top: 120px; /* Restaura el espacio original en PC */
     }
   }
   .video-item {

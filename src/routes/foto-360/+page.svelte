@@ -31,6 +31,8 @@
   }
   .sirv-item {
     width: calc(50% - 7.5px); /* 2 columnas en móviles */
+    border-radius: 8px;
+    overflow: hidden;
   }
 
   @media (min-width: 768px) {

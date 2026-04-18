@@ -58,7 +58,8 @@
 		position: fixed;
 		top: 0;
 		width: 100%;
-		height: 80px;
+		height: auto;
+		padding: 30px 0 15px 0;
 		background: transparent;
 		z-index: 3000;
 		display: flex;
@@ -72,14 +73,31 @@
 		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 	}
 
+	@media (min-width: 1100px) {
+		.navbar {
+			height: 80px;
+			padding: 0;
+		}
+	}
+
 	.nav-container {
 		width: 100%;
 		max-width: 1200px;
 		margin: 0 auto;
 		padding: 0 20px;
 		display: flex;
-		justify-content: space-between;
+		flex-direction: column;
+		justify-content: center;
 		align-items: center;
+		gap: 15px;
+	}
+
+	@media (min-width: 1100px) {
+		.nav-container {
+			flex-direction: row;
+			justify-content: space-between;
+			gap: 0;
+		}
 	}
 
 	/* --- BRAND / LOGO --- */
@@ -102,25 +120,67 @@
 		color: #ffffff;
 	}
 
-	/* --- LINKS (PC por defecto en horizontal) --- */
+	/* --- LINKS --- */
 	.nav-links {
 		display: flex;
-		gap: 30px;
 		list-style: none;
 		margin: 0;
+		position: absolute;
+		top: 100%;
+		left: 0;
+		width: 100%;
+		max-height: 0;
+		overflow: hidden;
+		background: rgba(10, 10, 10, 0.95);
+		flex-direction: column;
+		justify-content: flex-start;
+		align-items: center;
+		transition: max-height 0.4s ease-in-out, padding 0.4s ease-in-out;
 		padding: 0;
+		gap: 20px;
+	}
+
+	.nav-links.mobile-open {
+		max-height: 100vh;
+		padding: 30px 0 50px 0;
+		border-top: 1px solid rgba(255, 255, 255, 0.1);
+	}
+
+	@media (min-width: 1100px) {
+		.nav-links {
+			position: static;
+			width: auto;
+			max-height: none;
+			overflow: visible;
+			background: transparent;
+			flex-direction: row;
+			justify-content: flex-end;
+			padding: 0;
+			gap: 30px;
+			transition: none;
+		}
+		.nav-links.mobile-open {
+			border-top: none;
+			padding: 0;
+		}
 	}
 
 	.nav-links a {
 		text-decoration: none;
 		color: #bbb;
-		font-size: 0.9rem;
+		font-size: 1.5rem;
 		font-weight: 500;
 		text-transform: uppercase;
 		transition: color 0.3s;
 		position: relative;
 		padding-bottom: 5px;
 		white-space: nowrap;
+	}
+
+	@media (min-width: 1100px) {
+		.nav-links a {
+			font-size: 0.9rem;
+		}
 	}
 
 	/* Efecto de subrayado animado al pasar el mouse */
@@ -146,9 +206,9 @@
 		width: 100%;
 	}
 
-	/* --- HAMBURGUESA (Oculta en PC) --- */
+	/* --- HAMBURGUESA --- */
 	.hamburger {
-		display: none;
+		display: flex;
 		background: none;
 		border: none;
 		cursor: pointer;
@@ -156,6 +216,13 @@
 		height: 48px;
 		align-items: center;
 		justify-content: center;
+		z-index: 3001;
+	}
+
+	@media (min-width: 1100px) {
+		.hamburger {
+			display: none;
+		}
 	}
 
 	.bar {
@@ -195,51 +262,5 @@
 	.bar.open::after {
 		transform: rotate(-45deg);
 		bottom: 0;
-	}
-
-	/* --- MOBILE STYLES --- */
-	@media (max-width: 1100px) {
-		.navbar {
-			height: auto;
-			padding: 30px 0 15px 0;
-		}
-
-		.nav-container {
-			flex-direction: column;
-			justify-content: center;
-			align-items: center;
-			gap: 15px;
-		}
-
-		.hamburger {
-			display: flex;
-			z-index: 3001;
-		}
-
-		.nav-links {
-			position: absolute;
-			top: 100%;
-			left: 0;
-			width: 100%;
-			max-height: 0;
-			overflow: hidden;
-			background: rgba(10, 10, 10, 0.95);
-			flex-direction: column;
-			justify-content: flex-start;
-			align-items: center;
-			transition: max-height 0.4s ease-in-out, padding 0.4s ease-in-out;
-			padding: 0;
-			gap: 20px;
-		}
-
-		.nav-links.mobile-open {
-			max-height: 100vh;
-			padding: 30px 0 50px 0;
-			border-top: 1px solid rgba(255, 255, 255, 0.1);
-		}
-
-		.nav-links a {
-			font-size: 1.5rem;
-		}
 	}
 </style>

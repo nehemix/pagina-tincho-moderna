@@ -137,7 +137,7 @@
     max-width: 400px;
   }
 
-  @media (min-width: 768px) {
+  @media (min-width: 850px) {
     .contact-info { gap: 20px; }
     .contact-card, .contact-card:last-child {
       width: calc(33.333% - 13.33px); /* 3 tarjetas por fila en PC */

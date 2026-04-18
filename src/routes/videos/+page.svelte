@@ -3,6 +3,11 @@
   let { data }: { data: PageData & { videos: { id: string }[] } } = $props();
 </script>
 
+<svelte:head>
+  <link rel="preconnect" href="https://i.ytimg.com" crossorigin="anonymous" />
+  <link rel="dns-prefetch" href="https://i.ytimg.com" />
+</svelte:head>
+
 <section class="container videos-section">
 
   {#if data.videos && data.videos.length > 0}
@@ -10,12 +15,18 @@
       <div class="video-grid">
         {#each data.videos as video}
           <div class="video-item">
-            <a href="https://youtu.be/{video.id}" target="_blank">
-              <img 
-                src="https://img.youtube.com/vi/{video.id}/hqdefault.jpg" 
-                alt="Video Portfolio" 
-                loading="lazy" 
-              />
+            <a href="https://youtu.be/{video.id}" target="_blank" rel="noopener noreferrer">
+              <picture>
+                <source srcset="https://i.ytimg.com/vi_webp/{video.id}/hqdefault.webp" type="image/webp">
+                <img 
+                  src="https://i.ytimg.com/vi/{video.id}/hqdefault.jpg" 
+                  alt="Video Portfolio" 
+                  loading="lazy" 
+                  decoding="async"
+                  width="480"
+                  height="360"
+                />
+              </picture>
               <div class="play-icon">▶</div>
             </a>
           </div>
@@ -49,6 +60,7 @@
     animation: slideInFromTop 1s ease-out forwards;
     opacity: 0;
     transform: translateY(-50px);
+    will-change: transform, opacity;
   }
 
   @keyframes slideInFromTop {
@@ -68,8 +80,6 @@
     }
   }
 
-  @media (min-width: 1100px) {
-  }
   .video-item {
     width: calc(50% - 5px); /* 2 columnas en móviles */
     position: relative;

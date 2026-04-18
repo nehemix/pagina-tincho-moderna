@@ -44,18 +44,45 @@ async function getFiles(dir: string): Promise<string[]> {
 }
 
 // GET /api/images -> Devuelve una lista de todas las imágenes
-export const GET: RequestHandler = async () => {
+export const GET: RequestHandler = async ({ url, setHeaders }) => {
+    // Implementamos stale-while-revalidate para caché avanzado: sirve al instante, actualiza de fondo
+    setHeaders({
+        'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400'
+    });
+
     try {
         const baseDir = path.resolve(UPLOAD_DIR);
         await fs.mkdir(baseDir, { recursive: true }); // Asegura que el directorio base exista
 
-        const allFiles = await getFiles(baseDir);
+        const folderFilter = url.searchParams.get('folder')?.toLowerCase();
+        const limitParam = url.searchParams.get('limit');
+        const pageParam = url.searchParams.get('page');
+        const limit = limitParam ? parseInt(limitParam, 10) : 0;
+        const page = pageParam ? parseInt(pageParam, 10) : 1;
         
+        // Escaneo selectivo: Solo leer el directorio solicitado en lugar de escanear todo el disco
+        let searchDir = baseDir;
+        if (folderFilter) {
+            const safeFolder = path.normalize(folderFilter).replace(/^(\.\.[\/\\])+/, '');
+            searchDir = path.join(baseDir, safeFolder);
+        }
+
+        let allFiles: string[] = [];
+        try {
+            allFiles = await getFiles(searchDir);
+        } catch (err) {
+            allFiles = []; // Si la carpeta solicitada no existe, no rompemos la app
+        }
+
         // Filtra por extensiones de imagen y formatea las rutas para la web
-        const images = allFiles
+        let images = allFiles
             .filter(file => /\.(jpg|jpeg|png|webp|gif|avif|svg)$/i.test(file))
             .map(file => path.relative(path.resolve('static'), file).replace(/\\/g, '/'))
             .map(file => `/${file}`); // Asegura que la ruta empiece con '/'
+
+        if (folderFilter) {
+            images = images.filter(img => img.toLowerCase().includes(`/${folderFilter}/`));
+        }
 
         const order = await getOrderData();
         if (order.length > 0) {
@@ -69,7 +96,15 @@ export const GET: RequestHandler = async () => {
             });
         }
 
-        return json({ success: true, images });
+        const total = images.length;
+
+        // Aplicar paginación real a nivel backend para no saturar la red con JSONs inmensos
+        if (limit > 0) {
+            const startIndex = (page - 1) * limit;
+            images = images.slice(startIndex, startIndex + limit);
+        }
+
+        return json({ success: true, images, total, page, limit });
     } catch (e: any) {
         console.error("Error al leer el directorio de imágenes:", e);
         return json({ success: false, error: 'No se pudo leer el directorio de imágenes.' }, { status: 500 });

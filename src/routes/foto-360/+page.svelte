@@ -11,7 +11,7 @@
 {:else}
   {#key data.spins}
     <div class="sirv-grid">
-      {#each data.spins as spin}
+      {#each data.spins as spin (spin.id)}
         <div class="sirv-item">
           <!-- Pasamos el array de imágenes directamente al componente -->
           <ThreeSixtyViewer images={spin.images} title={spin.title} />
@@ -32,9 +32,7 @@
     max-width: 1200px;
     margin-left: auto;
     margin-right: auto;
-    animation: slideInFromTop 1s ease-out forwards;
-    opacity: 0;
-    transform: translateY(-50px);
+    animation: slideInFromTop 1s ease-out backwards;
   }
 
   @keyframes slideInFromTop {

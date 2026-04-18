@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { fade, scale } from 'svelte/transition';
+  import { fade, scale, fly } from 'svelte/transition';
 
   let { images } = $props<{ images: string[] }>();
   let selectedImage = $state<string | null>(null);
@@ -8,15 +8,20 @@
 
   // Lógica de navegación estructural
   let selectedIndex = $derived(selectedImage ? images.indexOf(selectedImage) : -1);
+  
+  // Dirección de la animación: 1 para derecha, -1 para izquierda
+  let slideDirection = $state(1);
 
   const nextImage = (e?: Event) => {
     if (e) e.stopPropagation();
+    slideDirection = 1;
     if (selectedIndex < images.length - 1) selectedImage = images[selectedIndex + 1];
     else selectedImage = images[0];
   };
 
   const prevImage = (e?: Event) => {
     if (e) e.stopPropagation();
+    slideDirection = -1;
     if (selectedIndex > 0) selectedImage = images[selectedIndex - 1];
     else selectedImage = images[images.length - 1];
   };
@@ -26,6 +31,22 @@
     if (e.key === 'Escape') closeImage();
     if (selectedImage && e.key === 'ArrowRight') nextImage();
     if (selectedImage && e.key === 'ArrowLeft') prevImage();
+  };
+
+  // Lógica de navegación táctil (Swipe)
+  let touchStartX = 0;
+  let touchEndX = 0;
+
+  const handleTouchStart = (e: TouchEvent) => {
+    touchStartX = e.changedTouches[0].screenX;
+    touchEndX = touchStartX; // Reseteamos para distinguir clics de swipes
+  };
+
+  const handleTouchEnd = (e: TouchEvent) => {
+    touchEndX = e.changedTouches[0].screenX;
+    const swipeThreshold = 50; // Distancia mínima en píxeles para considerar el gesto
+    if (touchStartX - touchEndX > swipeThreshold) nextImage();
+    else if (touchEndX - touchStartX > swipeThreshold) prevImage();
   };
 
   // Bloqueo estructural del scroll de la página al abrir el modal
@@ -67,22 +88,35 @@
 {#if selectedImage}
   <!-- svelte-ignore a11y_click_events_have_key_events -->
   <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-  <div class="lightbox-backdrop" role="dialog" aria-modal="true" tabindex="-1" transition:fade={{ duration: 200 }} onclick={closeImage}>
+  <div 
+    class="lightbox-backdrop" 
+    role="dialog" 
+    aria-modal="true" 
+    tabindex="-1" 
+    transition:fade={{ duration: 200 }} 
+    onclick={() => { if (Math.abs(touchStartX - touchEndX) < 50) closeImage(); }}
+    ontouchstart={handleTouchStart}
+    ontouchend={handleTouchEnd}
+  >
     <button class="close-btn" onclick={closeImage} aria-label="Cerrar">&times;</button>
     
     <!-- Controles de navegación -->
     <button class="nav-btn prev" onclick={prevImage} aria-label="Imagen anterior">&#10094;</button>
     <button class="nav-btn next" onclick={nextImage} aria-label="Imagen siguiente">&#10095;</button>
 
-    <!-- svelte-ignore a11y_click_events_have_key_events -->
-    <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-    <img 
-      src={selectedImage} 
-      alt="Imagen ampliada" 
-      class="expanded-img"
-      onclick={(e) => e.stopPropagation()}
-      transition:scale={{ duration: 200, start: 0.95 }}
-    />
+    <!-- {#key} fuerza a Svelte a re-renderizar y reproducir animaciones al cambiar la variable -->
+    {#key selectedImage}
+      <!-- svelte-ignore a11y_click_events_have_key_events -->
+      <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+      <img 
+        src={selectedImage} 
+        alt="Imagen ampliada" 
+        class="expanded-img"
+        onclick={(e) => e.stopPropagation()}
+        in:fly={{ x: 100 * slideDirection, duration: 300 }}
+        out:fly={{ x: -100 * slideDirection, duration: 300 }}
+      />
+    {/key}
   </div>
 {/if}
 
@@ -137,10 +171,19 @@
   
   .error-msg { color: white; text-align: center; padding: 50px; }
   .lightbox-backdrop {
-    position: fixed; inset: 0; background: rgba(0, 0, 0, 0.9);
-    display: flex; align-items: center; justify-content: center; z-index: 4000;
+    position: fixed; inset: 0; background: rgba(0, 0, 0, 0.95);
+    display: grid; place-items: center; z-index: 4000;
+    /* Bloquea gestos nativos del navegador como el zoom por doble tap */
+    touch-action: none;
+    user-select: none;
   }
-  .expanded-img { max-width: 90%; max-height: 90%; object-fit: contain; }
+  .expanded-img { 
+    max-width: 90vw; 
+    max-height: 90vh; 
+    object-fit: contain; 
+    /* Ambos elementos (entrante y saliente) ocuparán la misma celda de la grilla */
+    grid-area: 1 / 1; 
+  }
   
   /* Diseño mejorado del botón X */
   .close-btn { 

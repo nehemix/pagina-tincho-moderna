@@ -27,7 +27,7 @@
 
 <style>
   .videos-section {
-    padding: 185px 20px 60px; /* Ajuste para compensar el navbar más bajo */
+    padding: 100px 20px 60px; /* Unificado con la distancia de galerías */
     max-width: 1200px;
     margin: 0 auto;
   }
@@ -52,7 +52,7 @@
 
   @media (min-width: 1100px) {
     .videos-section {
-      padding-top: 120px; /* Restaura el espacio original en PC */
+      padding-top: 100px; /* Unificado con la distancia de galerías en PC */
     }
   }
   .video-item {

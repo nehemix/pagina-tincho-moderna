@@ -25,7 +25,7 @@
     flex-wrap: wrap;
     justify-content: center;
     gap: 15px;
-    padding: 175px 20px 40px; /* Ajuste para compensar el navbar más bajo */
+    padding: 100px 20px 40px; /* Unificado con la distancia de galerías */
     max-width: 1200px;
     margin: 0 auto;
   }
@@ -44,7 +44,7 @@
 
   @media (min-width: 1100px) {
     .sirv-grid {
-      padding-top: 120px; /* Restaura el espacio original en PC */
+      padding-top: 100px; /* Unificado con la distancia de galerías en PC */
     }
     .sirv-item {
       width: calc(25% - 22.5px); /* 4 columnas en PC */

@@ -2,7 +2,12 @@
   // Bloquea el scroll de toda la página al entrar a Contacto para evitar que se desarme
   $effect(() => {
     document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = ''; };
+    document.body.classList.add('transparent-nav-page');
+    
+    return () => { 
+      document.body.style.overflow = ''; 
+      document.body.classList.remove('transparent-nav-page');
+    };
   });
 </script>
 
@@ -45,22 +50,32 @@
 </section>
 
 <style>
+  /* Hace transparente el navbar cuando esta página está activa */
+  :global(.transparent-nav-page nav),
+  :global(.transparent-nav-page header),
+  :global(.transparent-nav-page .navbar),
+  :global(.transparent-nav-page #navbar) {
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+    backdrop-filter: none !important;
+  }
+
   /* Sección de contacto */
   .contact-section {
     background: radial-gradient(circle at top center, #2a2a2a 0%, #111 100%);
-    padding: 20px 20px;
+    padding: 100px 20px 20px 20px; /* Unificado con la distancia de galerías */
     text-align: center;
     font-family: 'Arial', sans-serif;
-    margin-top: 25px; /* Reducido para acercarlo al menú hamburguesa */
     color: white;
     
     /* Fija el tamaño exacto de la pantalla y oculta cualquier desborde */
-    height: calc(100vh - 40px);
+    height: 100vh;
     box-sizing: border-box;
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start; /* Alinea el contenido arriba en vez de centrarlo */
     align-items: center;
 
     animation: slideInFromTop 1s ease-out forwards;

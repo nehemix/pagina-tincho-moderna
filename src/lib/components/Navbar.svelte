@@ -59,7 +59,7 @@
 		top: 0;
 		width: 100%;
 		height: auto;
-		padding: 30px 0 15px 0;
+		padding: 15px 0;
 		background: transparent;
 		z-index: 3000;
 		display: flex;
@@ -86,18 +86,9 @@
 		margin: 0 auto;
 		padding: 0 20px;
 		display: flex;
-		flex-direction: column;
-		justify-content: center;
+		flex-direction: row;
+		justify-content: space-between;
 		align-items: center;
-		gap: 15px;
-	}
-
-	@media (min-width: 1100px) {
-		.nav-container {
-			flex-direction: row;
-			justify-content: space-between;
-			gap: 0;
-		}
 	}
 
 	/* --- BRAND / LOGO --- */

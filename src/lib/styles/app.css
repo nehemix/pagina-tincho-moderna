@@ -39,7 +39,7 @@ body {
 /* Ajustes universales para galerías */
 .gallery-row {
   padding: 20px;
-  margin-top: 175px; /* Aumentado para mantener separación exacta con el navbar */
+  margin-top: 100px; /* Unificado con la distancia de PC para compensar el nuevo navbar más corto */
   max-width: 1200px;
   margin-left: auto;
   margin-right: auto;

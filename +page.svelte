@@ -77,43 +77,6 @@
       alert('Error al borrar: ' + data.error);
     }
   }
-
-  // --- Lógica de Drag & Drop ---
-  function handleDragStart(e: DragEvent, imgPath: string) {
-    if (e.dataTransfer) {
-      e.dataTransfer.setData('text/plain', imgPath);
-      e.dataTransfer.effectAllowed = 'move';
-    }
-  }
-
-  async function handleDrop(e: DragEvent, targetImgPath: string) {
-    e.preventDefault();
-    const draggedImgPath = e.dataTransfer?.getData('text/plain');
-    if (!draggedImgPath || draggedImgPath === targetImgPath) return;
-
-    // Buscamos los índices en el array principal
-    const fromIndex = allImages.indexOf(draggedImgPath);
-    const toIndex = allImages.indexOf(targetImgPath);
-
-    if (fromIndex !== -1 && toIndex !== -1) {
-      // Movemos la imagen localmente
-      const newAllImages = [...allImages];
-      const [movedItem] = newAllImages.splice(fromIndex, 1);
-      newAllImages.splice(toIndex, 0, movedItem);
-      
-      allImages = newAllImages; // Se actualiza la UI al instante
-
-      // Guardamos el nuevo orden en el servidor
-      const res = await fetch('/api/images', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ order: newAllImages })
-      });
-      const data = await res.json();
-      
-      if (!data.success) alert('Error al guardar el orden: ' + data.error);
-    }
-  }
 </script>
 
 <svelte:head>
@@ -167,14 +130,8 @@
     
     <div class="admin-gallery">
       {#each activeTab === 'normales' ? normalImages : threeSixtyImages as img (img)}
-        <div 
-          class="image-card"
-          draggable="true"
-          ondragstart={(e) => handleDragStart(e, img)}
-          ondragover={(e) => e.preventDefault()}
-          ondrop={(e) => handleDrop(e, img)}
-        >
-          <img src={img} alt="Miniatura" loading="lazy" draggable="false" />
+        <div class="image-card">
+          <img src={img} alt="Miniatura" loading="lazy" />
           <div class="image-overlay">
             <p class="img-path">{img.split('/').pop()}</p>
             <button class="btn-delete" onclick={() => deleteImage(img)} aria-label="Borrar imagen">
@@ -231,10 +188,7 @@
   .admin-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
   .image-card {
     position: relative; border-radius: 8px; overflow: hidden; aspect-ratio: 1; background: #111;
-    cursor: grab;
-    user-select: none;
   }
-  .image-card:active { cursor: grabbing; }
   .image-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .image-overlay {
     position: absolute; inset: 0; background: rgba(0,0,0,0.8); display: flex; flex-direction: column;

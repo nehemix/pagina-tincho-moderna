@@ -6,9 +6,6 @@ import path from 'path';
 // Las imágenes se guardarán en la carpeta `static/images`
 const UPLOAD_DIR = 'static/images';
 
-// Archivo donde guardaremos el orden personalizado
-const ORDER_FILE = 'data/images-order.json';
-
 // Función para obtener todos los archivos de un directorio de forma recursiva
 async function getFiles(dir: string): Promise<string[]> {
     try {
@@ -38,30 +35,11 @@ export const GET: RequestHandler = async () => {
 
         const allFiles = await getFiles(baseDir);
         
-        // Intentamos cargar el orden guardado
-        let imageOrder: string[] = [];
-        try {
-            const orderContent = await fs.readFile(ORDER_FILE, 'utf-8');
-            imageOrder = JSON.parse(orderContent);
-        } catch (e: any) {
-            // Si el archivo no existe aún, ignoramos el error
-        }
-
         // Filtra por extensiones de imagen y formatea las rutas para la web
         const images = allFiles
             .filter(file => /\.(jpg|jpeg|png|webp|gif|avif|svg)$/i.test(file))
             .map(file => path.relative(path.resolve('static'), file).replace(/\\/g, '/'))
             .map(file => `/${file}`); // Asegura que la ruta empiece con '/'
-
-        // Ordenamos las imágenes basándonos en el JSON guardado
-        images.sort((a, b) => {
-            const indexA = imageOrder.indexOf(a);
-            const indexB = imageOrder.indexOf(b);
-            if (indexA !== -1 && indexB !== -1) return indexA - indexB; // Ambos tienen un orden definido
-            if (indexA !== -1) return -1; // Solo 'a' tiene orden, va primero
-            if (indexB !== -1) return 1;  // Solo 'b' tiene orden, va primero
-            return a.localeCompare(b);    // Si ninguno tiene orden, usamos orden alfabético por defecto
-        });
 
         return json({ success: true, images });
     } catch (e: any) {
@@ -113,23 +91,6 @@ export const POST: RequestHandler = async ({ request }) => {
     } catch (e: any) {
         console.error("Error al subir el archivo:", e);
         return json({ success: false, error: e.message || 'Ocurrió un error desconocido.' }, { status: 500 });
-    }
-};
-
-// PATCH /api/images -> Actualiza el orden de las imágenes
-export const PATCH: RequestHandler = async ({ request }) => {
-    try {
-        const { order } = await request.json();
-        if (!Array.isArray(order)) throw error(400, 'El formato del orden es inválido. Se esperaba un array.');
-
-        // Aseguramos que la carpeta data/ exista y guardamos el JSON
-        await fs.mkdir(path.dirname(ORDER_FILE), { recursive: true });
-        await fs.writeFile(ORDER_FILE, JSON.stringify(order, null, 2));
-
-        return json({ success: true, message: 'Orden de imágenes actualizado con éxito.' });
-    } catch (e: any) {
-        console.error("Error al guardar el orden:", e);
-        return json({ success: false, error: e.message || 'Error desconocido al guardar el orden' }, { status: 500 });
     }
 };
 
@@ -190,19 +151,6 @@ export const DELETE: RequestHandler = async ({ request }) => {
             } catch (err: any) {
                 if (err.code !== 'ENOENT') throw err; // Si el error no es "no existe", lo lanzamos
             }
-        }
-
-        // NUEVO: Limpieza del archivo de orden para evitar rutas fantasma
-        try {
-            const orderContent = await fs.readFile(ORDER_FILE, 'utf-8');
-            let imageOrder: string[] = JSON.parse(orderContent);
-            
-            // Filtramos las imágenes que acabamos de borrar (individuales o por carpeta)
-            imageOrder = imageOrder.filter(img => !pathsToDelete.includes(img) && !(body.folderPath && img.includes(`/${body.folderPath}/`)));
-            
-            await fs.writeFile(ORDER_FILE, JSON.stringify(imageOrder, null, 2));
-        } catch (e: any) {
-            // Ignoramos el error si el archivo images-order.json aún no ha sido creado
         }
 
         return json({ success: true, message: `${deletedCount} imagen(es) eliminada(s) con éxito.` });

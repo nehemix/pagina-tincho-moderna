@@ -43,11 +43,11 @@
     padding: 20px 20px;
     text-align: center;
     font-family: 'Arial', sans-serif;
-    margin-top: 80px; /* Espacio para que no se solape con el navbar */
+    margin-top: 50px; /* Reducido para acercarlo al menú hamburguesa */
     color: white;
     
     /* Propiedades para centrar vertical y horizontalmente */
-    min-height: calc(100vh - 80px); /* Ocupa todo el alto de la pantalla restante */
+    min-height: calc(100vh - 100px); /* Ocupa todo el alto de la pantalla restante */
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -94,18 +94,20 @@
   }
 
   .contact-info {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
     gap: 15px;
     width: 100%;
   }
 
   /* Diseño de las tarjetas */
   .contact-card {
+    width: calc(50% - 7.5px); /* 2 tarjetas por fila en móviles */
     background: rgba(30, 30, 30, 0.6);
     border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: 16px;
-    padding: 25px 15px;
+    padding: 15px; /* Reducido para que las tarjetas sean más bajas en móviles */
     transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
     backdrop-filter: blur(10px);
     display: flex;
@@ -119,16 +121,31 @@
     border-color: rgba(11, 102, 35, 0.5); /* Verde primario con opacidad */
   }
 
+  /* El email se ubica abajo centrado ocupando un poco más de espacio */
+  .contact-card:last-child {
+    width: 100%;
+    max-width: 400px;
+  }
+
+  @media (min-width: 768px) {
+    .contact-info { gap: 20px; }
+    .contact-card, .contact-card:last-child {
+      width: calc(33.333% - 13.33px); /* 3 tarjetas por fila en PC */
+      max-width: none;
+      padding: 25px 15px; /* Restaura el padding original en PC/Tablets */
+    }
+  }
+
   .icon-wrapper {
-    width: 45px;
-    height: 45px;
+    width: 40px; /* Reducido ligeramente */
+    height: 40px; /* Reducido ligeramente */
     background: rgba(11, 102, 35, 0.1);
     color: var(--primary-green);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 15px;
+    margin-bottom: 10px; /* Reducido para menor altura de tarjeta */
   }
 
   .icon-wrapper svg {
@@ -148,6 +165,7 @@
     font-size: 0.95rem;
     color: #bbb;
     margin: 0;
+    word-break: break-word; /* Evita que correos muy largos se salgan de la tarjeta */
   }
 
   .contact-card a {

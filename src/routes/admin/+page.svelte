@@ -105,6 +105,44 @@
     }
   }
 
+  // --- Lógica de Reordenamiento (Drag & Drop de Imágenes) ---
+  function handleDragStart(e: DragEvent, imgPath: string) {
+    if (e.dataTransfer) {
+      e.dataTransfer.setData('text/plain', imgPath);
+      e.dataTransfer.effectAllowed = 'move';
+    }
+  }
+
+  async function handleReorderDrop(e: DragEvent, targetImgPath: string) {
+    e.preventDefault();
+    const draggedImgPath = e.dataTransfer?.getData('text/plain');
+    if (!draggedImgPath || draggedImgPath === targetImgPath) return;
+
+    // Buscamos los índices en el array principal
+    const fromIndex = allImages.indexOf(draggedImgPath);
+    const toIndex = allImages.indexOf(targetImgPath);
+
+    if (fromIndex !== -1 && toIndex !== -1) {
+      // Movemos la imagen localmente
+      const newAllImages = [...allImages];
+      const [movedItem] = newAllImages.splice(fromIndex, 1);
+      newAllImages.splice(toIndex, 0, movedItem);
+      
+      allImages = newAllImages; // Se actualiza la UI al instante
+
+      // Guardamos el nuevo orden en el servidor
+      const res = await fetch('/api/images', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order: newAllImages })
+      });
+      const data = await res.json();
+      
+      if (!data.success) toast.error('Error al guardar el orden: ' + data.error);
+      else toast.success('Orden actualizado correctamente.');
+    }
+  }
+
   // Función para subir una imagen
   async function uploadImage(e: Event) {
     e.preventDefault();
@@ -357,8 +395,12 @@
         role="button"
         tabindex="0"
         aria-label="Seleccionar imagen"
+        draggable="true"
+        ondragstart={(e) => handleDragStart(e, img)}
+        ondragover={(e) => e.preventDefault()}
+        ondrop={(e) => handleReorderDrop(e, img)}
       >
-        <img src={img} alt="Miniatura" loading="lazy" />
+        <img src={img} alt="Miniatura" loading="lazy" draggable="false" />
         {#if selectedImages.includes(img)}
           <div class="checkmark">✓</div>
         {/if}
@@ -471,7 +513,8 @@
   .folder-content { padding: 20px; border-top: 1px solid #333; }
   
   .admin-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
-  .image-card { position: relative; border-radius: 8px; overflow: hidden; aspect-ratio: 1; background: #111; cursor: pointer; transition: transform 0.2s, border 0.2s; border: 2px solid transparent; }
+  .image-card { position: relative; border-radius: 8px; overflow: hidden; aspect-ratio: 1; background: #111; cursor: grab; user-select: none; transition: transform 0.2s, border 0.2s; border: 2px solid transparent; }
+  .image-card:active { cursor: grabbing; }
   .image-card.selected { border-color: var(--primary-green); transform: scale(0.95); }
   .image-card:focus-visible { outline: 2px solid var(--primary-green); outline-offset: 2px; }
   .checkmark { position: absolute; top: 10px; right: 10px; width: 24px; height: 24px; background: var(--primary-green); color: white; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-weight: bold; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.5); }

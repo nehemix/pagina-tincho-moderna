@@ -9,14 +9,16 @@
 {:else if data.spins.length === 0}
   <p class="error-msg">No se encontraron imágenes 360°.</p>
 {:else}
-  <div class="sirv-grid">
-    {#each data.spins as spin}
-      <div class="sirv-item">
-        <!-- Pasamos el array de imágenes directamente al componente -->
-        <ThreeSixtyViewer images={spin.images} title={spin.title} />
-      </div>
-    {/each}
-  </div>
+  {#key data.spins}
+    <div class="sirv-grid">
+      {#each data.spins as spin}
+        <div class="sirv-item">
+          <!-- Pasamos el array de imágenes directamente al componente -->
+          <ThreeSixtyViewer images={spin.images} title={spin.title} />
+        </div>
+      {/each}
+    </div>
+  {/key}
 {/if}
 
 <style>
@@ -30,6 +32,20 @@
     max-width: 1200px;
     margin-left: auto;
     margin-right: auto;
+    animation: slideInFromTop 1s ease-out forwards;
+    opacity: 0;
+    transform: translateY(-50px);
+  }
+
+  @keyframes slideInFromTop {
+    0% {
+      opacity: 0;
+      transform: translateY(-50px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
   .sirv-item {
     width: calc(50% - 7.5px); /* 2 columnas en móviles */

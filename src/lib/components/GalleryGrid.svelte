@@ -61,24 +61,27 @@
 <svelte:window onkeydown={handleKeydown} />
 
 {#if images.length > 0}
-  <div class="gallery-row">
-    {#each images as src}
-      <div 
-        class="gallery-item" 
-        tabindex="0" 
-        role="button" 
-        aria-label="Abrir imagen"
-        onclick={() => (selectedImage = src)}
-        onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectedImage = src; } }}>
-        <img 
-          {src} 
-          alt="Portfolio" 
-          class="gallery-img" 
-          loading="lazy" 
-        />
-      </div>
-    {/each}
-  </div>
+  <!-- {#key} obliga a recrear el contenedor si cambian las fotos, repitiendo la animación -->
+  {#key images}
+    <div class="gallery-row">
+      {#each images as src}
+        <div 
+          class="gallery-item" 
+          tabindex="0" 
+          role="button" 
+          aria-label="Abrir imagen"
+          onclick={() => (selectedImage = src)}
+          onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectedImage = src; } }}>
+          <img 
+            {src} 
+            alt="Portfolio" 
+            class="gallery-img" 
+            loading="lazy" 
+          />
+        </div>
+      {/each}
+    </div>
+  {/key}
 {:else}
   <div class="error-msg">
     <p>No se encontraron fotos para esta categoría.</p>
@@ -126,6 +129,21 @@
     flex-wrap: wrap;
     justify-content: center;
     gap: 10px;
+    /* Efecto de entrada idéntico al de la sección Contacto */
+    animation: slideInFromTop 1s ease-out forwards;
+    opacity: 0;
+    transform: translateY(-50px);
+  }
+
+  @keyframes slideInFromTop {
+    0% {
+      opacity: 0;
+      transform: translateY(-50px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   .gallery-item {

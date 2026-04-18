@@ -6,20 +6,22 @@
 <section class="container videos-section">
 
   {#if data.videos && data.videos.length > 0}
-    <div class="video-grid">
-      {#each data.videos as video}
-        <div class="video-item">
-          <a href="https://youtu.be/{video.id}" target="_blank">
-            <img 
-              src="https://img.youtube.com/vi/{video.id}/hqdefault.jpg" 
-              alt="Video Portfolio" 
-              loading="lazy" 
-            />
-            <div class="play-icon">▶</div>
-          </a>
-        </div>
-      {/each}
-    </div>
+    {#key data.videos}
+      <div class="video-grid">
+        {#each data.videos as video}
+          <div class="video-item">
+            <a href="https://youtu.be/{video.id}" target="_blank">
+              <img 
+                src="https://img.youtube.com/vi/{video.id}/hqdefault.jpg" 
+                alt="Video Portfolio" 
+                loading="lazy" 
+              />
+              <div class="play-icon">▶</div>
+            </a>
+          </div>
+        {/each}
+      </div>
+    {/key}
   {:else}
     <p class="empty-msg">Aún no se han agregado videos a la galería.</p>
   {/if}
@@ -44,6 +46,20 @@
     flex-wrap: wrap;
     justify-content: center;
     gap: 10px;
+    animation: slideInFromTop 1s ease-out forwards;
+    opacity: 0;
+    transform: translateY(-50px);
+  }
+
+  @keyframes slideInFromTop {
+    0% {
+      opacity: 0;
+      transform: translateY(-50px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   @media (min-width: 768px) {

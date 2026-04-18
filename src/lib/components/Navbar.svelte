@@ -152,31 +152,36 @@
 		background: none;
 		border: none;
 		cursor: pointer;
-		padding: 10px;
+		width: 48px;
+		height: 48px;
+		align-items: center;
+		justify-content: center;
 	}
 
 	.bar {
-		width: 25px;
-		height: 2px;
+		width: 32px;
+		height: 3px;
 		background: white;
 		position: relative;
 		transition: 0.3s;
+		border-radius: 5px;
 	}
 	.bar::before,
 	.bar::after {
 		content: '';
 		position: absolute;
-		width: 25px;
-		height: 2px;
+		width: 32px;
+		height: 3px;
 		background: white;
 		left: 0;
 		transition: 0.3s;
+		border-radius: 5px;
 	}
 	.bar::before {
-		top: -8px;
+		top: -10px;
 	}
 	.bar::after {
-		bottom: -8px;
+		bottom: -10px;
 	}
 
 	/* Animación cruz */
@@ -207,7 +212,7 @@
 		}
 
 		.hamburger {
-			display: block;
+			display: flex;
 			z-index: 3001;
 		}
 

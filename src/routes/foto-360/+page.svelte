@@ -11,30 +11,43 @@
 {:else}
   <div class="sirv-grid">
     {#each data.spins as spin}
-      <!-- Pasamos el array de imágenes directamente al componente -->
-      <ThreeSixtyViewer images={spin.images} title={spin.title} />
+      <div class="sirv-item">
+        <!-- Pasamos el array de imágenes directamente al componente -->
+        <ThreeSixtyViewer images={spin.images} title={spin.title} />
+      </div>
     {/each}
   </div>
 {/if}
 
 <style>
   .sirv-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
     gap: 15px;
     padding: 175px 20px 40px; /* Ajuste para compensar el navbar más bajo */
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .sirv-item {
+    width: calc(50% - 7.5px); /* 2 columnas en móviles */
   }
 
   @media (min-width: 768px) {
     .sirv-grid {
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       gap: 30px;
+    }
+    .sirv-item {
+      width: calc(33.333% - 20px); /* 3 columnas en tablets */
     }
   }
 
   @media (min-width: 1100px) {
     .sirv-grid {
       padding-top: 120px; /* Restaura el espacio original en PC */
+    }
+    .sirv-item {
+      width: calc(25% - 22.5px); /* 4 columnas en PC */
     }
   }
   .error-msg { color: white; text-align: center; padding: 120px 20px; }

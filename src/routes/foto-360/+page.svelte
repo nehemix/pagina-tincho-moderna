@@ -25,9 +25,11 @@
     flex-wrap: wrap;
     justify-content: center;
     gap: 15px;
-    padding: 100px 20px 40px; /* Unificado con la distancia de galerías */
+    padding: 20px 20px 40px;
+    margin-top: 100px; /* Unificado con la distancia de galerías */
     max-width: 1200px;
-    margin: 0 auto;
+    margin-left: auto;
+    margin-right: auto;
   }
   .sirv-item {
     width: calc(50% - 7.5px); /* 2 columnas en móviles */
@@ -45,9 +47,6 @@
   }
 
   @media (min-width: 1100px) {
-    .sirv-grid {
-      padding-top: 100px; /* Unificado con la distancia de galerías en PC */
-    }
     .sirv-item {
       width: calc(25% - 22.5px); /* 4 columnas en PC */
     }

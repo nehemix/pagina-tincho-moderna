@@ -27,9 +27,11 @@
 
 <style>
   .videos-section {
-    padding: 100px 20px 60px; /* Unificado con la distancia de galerías */
+    padding: 20px 20px 60px;
+    margin-top: 100px; /* Unificado con la distancia de galerías */
     max-width: 1200px;
-    margin: 0 auto;
+    margin-left: auto;
+    margin-right: auto;
   }
   .page-title {
     text-align: center;
@@ -51,9 +53,6 @@
   }
 
   @media (min-width: 1100px) {
-    .videos-section {
-      padding-top: 100px; /* Unificado con la distancia de galerías en PC */
-    }
   }
   .video-item {
     width: calc(50% - 5px); /* 2 columnas en móviles */

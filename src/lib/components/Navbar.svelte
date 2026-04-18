@@ -120,6 +120,7 @@
 		transition: color 0.3s;
 		position: relative;
 		padding-bottom: 5px;
+		white-space: nowrap;
 	}
 
 	/* Efecto de subrayado animado al pasar el mouse */
@@ -192,27 +193,44 @@
 	}
 
 	/* --- MOBILE STYLES --- */
-	@media (max-width: 768px) {
+	@media (max-width: 1100px) {
+		.navbar {
+			height: auto;
+			padding: 15px 0;
+		}
+
+		.nav-container {
+			flex-direction: column;
+			justify-content: center;
+			align-items: center;
+			gap: 15px;
+		}
+
 		.hamburger {
 			display: block;
 			z-index: 3001;
 		}
 
 		.nav-links {
-			position: fixed;
-			top: 0;
-			right: -100%;
-			width: 80%;
-			height: 100vh;
-			background: #0a0a0a;
+			position: absolute;
+			top: 100%;
+			left: 0;
+			width: 100%;
+			max-height: 0;
+			overflow: hidden;
+			background: rgba(10, 10, 10, 0.95);
 			flex-direction: column;
-			justify-content: center;
+			justify-content: flex-start;
 			align-items: center;
-			transition: 0.4s;
+			transition: max-height 0.4s ease-in-out, padding 0.4s ease-in-out;
+			padding: 0;
+			gap: 20px;
 		}
 
 		.nav-links.mobile-open {
-			right: 0;
+			max-height: 100vh;
+			padding: 30px 0 50px 0;
+			border-top: 1px solid rgba(255, 255, 255, 0.1);
 		}
 
 		.nav-links a {

@@ -4,6 +4,7 @@
   import { Toaster, toast } from 'svelte-sonner';
   import { onMount } from 'svelte';
   import { slide } from 'svelte/transition';
+  import { flip } from 'svelte/animate';
 
   // Los datos ahora vienen del loader (+page.ts)
   let { data }: { data: PageData & { error?: string, images?: string[] } } = $props();
@@ -25,6 +26,7 @@
   
   let allVideos = $state<{id: string, url: string}[]>([]);
   let videoUrl = $state('');
+  let draggedImage = $state<string | null>(null);
 
   // Forzamos la carga de imágenes si al iniciar el panel la lista está vacía
   onMount(() => {
@@ -54,6 +56,7 @@
 
   let normalGroups = $derived(groupImagesByFolder(allImages.filter(img => !img.includes('/360/') && !img.includes('/inicio/'))));
   let threeSixtyGroups = $derived(groupImagesByFolder(allImages.filter(img => img.includes('/360/')), '360/'));
+  let inicioImages = $derived(allImages.filter(img => img.includes('/inicio/')));
   let folderOptions = $derived(Object.keys(activeTab === 'normales' ? normalGroups : activeTab === '360' ? threeSixtyGroups : {}).filter(f => f !== 'Raíz'));
 
   function switchTab(tab: 'normales' | '360' | 'videos' | 'inicio') {
@@ -266,6 +269,38 @@
       toast.error(`Error al borrar: ${data.error}`);
     }
   }
+
+  // Drag and Drop (Arrastrar y Soltar)
+  function handleDragStart(e: DragEvent, img: string) {
+    draggedImage = img;
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', img);
+    }
+  }
+
+  function handleDropImage(e: DragEvent, targetImg: string) {
+    e.preventDefault();
+    if (!draggedImage || draggedImage === targetImg) {
+      draggedImage = null;
+      return;
+    }
+
+    const fromIndex = allImages.indexOf(draggedImage);
+    const toIndex = allImages.indexOf(targetImg);
+
+    if (fromIndex > -1 && toIndex > -1) {
+      const newImages = [...allImages];
+      const [moved] = newImages.splice(fromIndex, 1);
+      newImages.splice(toIndex, 0, moved);
+      allImages = newImages; // Al actualizar allImages, Svelte re-calcula derivados y gatilla animaciones
+      
+      // Guardamos en segundo plano
+      fetch('/api/images', { method: 'PATCH', body: JSON.stringify({ order: allImages }) })
+        .catch(err => console.error("Error guardando orden:", err));
+    }
+    draggedImage = null;
+  }
 </script>
 
 <svelte:head>
@@ -300,7 +335,7 @@
         <form onsubmit={addVideo} class="upload-form">
           <div class="input-group">
             <label for="videoUrl">Enlace de YouTube:</label>
-            <input type="url" id="videoUrl" bind:value={videoUrl} placeholder="Ej: https://youtu.be/..." required />
+            <input type="url" id="videoUrl" bind:value={videoUrl} required />
           </div>
           <button type="submit" class="btn-upload" disabled={isUploading}>
             {isUploading ? 'Procesando...' : 'Agregar Video'}
@@ -356,23 +391,14 @@
       </div>
     {/if}
     
-    <!-- Creamos un snippet (plantilla) reutilizable para no repetir el código de la tarjeta -->
-    {#snippet imageCard(img: string)}
-      <div 
-        class="image-card {selectedImages.includes(img) ? 'selected' : ''}"
-        onclick={() => toggleSelection(img)}
-        onkeydown={(e) => e.key === 'Enter' && toggleSelection(img)}
-        role="button"
-        tabindex="0"
-        aria-label="Seleccionar imagen"
-      >
-        <img src={img} alt="Miniatura" loading="lazy" />
-        {#if selectedImages.includes(img)}
-          <div class="checkmark">✓</div>
-        {/if}
-        <div class="image-overlay">
-          <p class="img-path">{img.split('/').pop()}</p>
-        </div>
+    <!-- Snippet solo para el contenido interno. Esto permite que animate:flip actúe sobre el wrapper <div> externo de forma segura -->
+    {#snippet imageCardInner(img: string)}
+      <img src={img} alt="Miniatura" loading="lazy" draggable="false" />
+      {#if selectedImages.includes(img)}
+        <div class="checkmark">✓</div>
+      {/if}
+      <div class="image-overlay">
+        <p class="img-path">{img.split('/').pop()}</p>
       </div>
     {/snippet}
 
@@ -396,7 +422,21 @@
         {#if expandedFolders[folderName]}
           <div class="folder-content" transition:slide={{ duration: 300 }}>
             <div class="admin-gallery">
-              {#each images as img (img)} {@render imageCard(img)} {/each}
+              {#each images as img (img)}
+                <div
+                  animate:flip={{duration: 300}}
+                  draggable="true"
+                  ondragstart={(e) => handleDragStart(e, img)}
+                  ondragover={(e) => e.preventDefault()}
+                  ondrop={(e) => handleDropImage(e, img)}
+                  class="image-card {selectedImages.includes(img) ? 'selected' : ''} {draggedImage === img ? 'dragging' : ''}"
+                  onclick={() => toggleSelection(img)}
+                  onkeydown={(e) => e.key === 'Enter' && toggleSelection(img)}
+                  role="button" tabindex="0" aria-label="Seleccionar imagen"
+                >
+                  {@render imageCardInner(img)}
+                </div>
+              {/each}
             </div>
           </div>
         {/if}
@@ -410,8 +450,20 @@
       {/each}
     {:else if activeTab === 'inicio'}
       <div class="admin-gallery">
-        {#each allImages.filter(img => img.includes('/inicio/')) as img (img)}
-          {@render imageCard(img)}
+        {#each inicioImages as img (img)}
+          <div
+            animate:flip={{duration: 300}}
+            draggable="true"
+            ondragstart={(e) => handleDragStart(e, img)}
+            ondragover={(e) => e.preventDefault()}
+            ondrop={(e) => handleDropImage(e, img)}
+            class="image-card {selectedImages.includes(img) ? 'selected' : ''} {draggedImage === img ? 'dragging' : ''}"
+            onclick={() => toggleSelection(img)}
+            onkeydown={(e) => e.key === 'Enter' && toggleSelection(img)}
+            role="button" tabindex="0" aria-label="Seleccionar imagen"
+          >
+            {@render imageCardInner(img)}
+          </div>
         {/each}
       </div>
     {:else if activeTab === 'videos'}
@@ -487,6 +539,7 @@
   .admin-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
   .image-card { position: relative; border-radius: 8px; overflow: hidden; aspect-ratio: 1; background: #111; cursor: pointer; transition: transform 0.2s, border 0.2s; border: 2px solid transparent; }
   .image-card.selected { border-color: var(--primary-green); transform: scale(0.95); }
+  .image-card.dragging { opacity: 0.4; transform: scale(0.95); border-color: var(--primary-green); box-shadow: 0 0 15px var(--primary-green); z-index: 10; }
   .image-card:focus-visible { outline: 2px solid var(--primary-green); outline-offset: 2px; }
   .checkmark { position: absolute; top: 10px; right: 10px; width: 24px; height: 24px; background: var(--primary-green); color: white; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-weight: bold; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.5); }
   .image-card img { width: 100%; height: 100%; object-fit: cover; display: block; }

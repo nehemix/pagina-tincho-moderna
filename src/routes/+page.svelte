@@ -4,18 +4,14 @@
   
   let { data }: { data: PageData } = $props();
   
-  // Si el administrador subió fotos a la carpeta 'inicio', las mostramos. Si no, usamos las predeterminadas.
-  const defaultImages = [
-    '/producto/foto4.webp',
-    '/industria/foto-1.webp',
-    '/producto/foto30.webp'
-  ];
-  const heroImages = data.heroImages && data.heroImages.length > 0 ? data.heroImages : defaultImages;
+  const heroImages = data.heroImages || [];
   
   // Usamos el estado de Svelte 5 para llevar el control de la imagen actual
   let currentIndex = $state(0);
 
   onMount(() => {
+    if (heroImages.length <= 1) return; // No inicia el slider si hay 0 o 1 sola foto
+
     // Cambiamos de imagen automáticamente cada 5 segundos (5000 milisegundos)
     const interval = setInterval(() => {
       currentIndex = (currentIndex + 1) % heroImages.length;

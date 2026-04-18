@@ -5,6 +5,22 @@ import path from 'path';
 
 // Las imágenes se guardarán en la carpeta `static/images`
 const UPLOAD_DIR = 'static/images';
+const ORDER_FILE = 'data/image-order.json';
+
+async function getOrderData(): Promise<string[]> {
+    try {
+        await fs.mkdir(path.dirname(ORDER_FILE), { recursive: true });
+        const content = await fs.readFile(ORDER_FILE, 'utf-8');
+        return JSON.parse(content);
+    } catch (e: any) {
+        return [];
+    }
+}
+
+async function saveOrderData(order: string[]) {
+    await fs.mkdir(path.dirname(ORDER_FILE), { recursive: true });
+    await fs.writeFile(ORDER_FILE, JSON.stringify(order, null, 2));
+}
 
 // Función para obtener todos los archivos de un directorio de forma recursiva
 async function getFiles(dir: string): Promise<string[]> {
@@ -40,6 +56,18 @@ export const GET: RequestHandler = async () => {
             .filter(file => /\.(jpg|jpeg|png|webp|gif|avif|svg)$/i.test(file))
             .map(file => path.relative(path.resolve('static'), file).replace(/\\/g, '/'))
             .map(file => `/${file}`); // Asegura que la ruta empiece con '/'
+
+        const order = await getOrderData();
+        if (order.length > 0) {
+            images.sort((a, b) => {
+                const indexA = order.indexOf(a);
+                const indexB = order.indexOf(b);
+                if (indexA === -1 && indexB === -1) return a.localeCompare(b);
+                if (indexA === -1) return 1; // Elementos nuevos van al final
+                if (indexB === -1) return -1;
+                return indexA - indexB;
+            });
+        }
 
         return json({ success: true, images });
     } catch (e: any) {
@@ -110,6 +138,21 @@ export const PUT: RequestHandler = async ({ request }) => {
         return json({ success: true, message: 'Carpeta renombrada con éxito.' });
     } catch (e: any) {
         console.error("Error al renombrar la carpeta:", e);
+        return json({ success: false, error: e.message || 'Error desconocido' }, { status: 500 });
+    }
+};
+
+// PATCH /api/images -> Guarda el orden personalizado de las imágenes
+export const PATCH: RequestHandler = async ({ request }) => {
+    try {
+        const body = await request.json();
+        if (body.order && Array.isArray(body.order)) {
+            await saveOrderData(body.order);
+            return json({ success: true, message: 'Orden guardado con éxito.' });
+        }
+        throw error(400, 'Formato de orden inválido.');
+    } catch (e: any) {
+        console.error("Error al guardar el orden:", e);
         return json({ success: false, error: e.message || 'Error desconocido' }, { status: 500 });
     }
 };

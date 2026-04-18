@@ -1,3 +1,11 @@
+<script lang="ts">
+  // Bloquea el scroll de toda la página al entrar a Contacto para evitar que se desarme
+  $effect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  });
+</script>
+
 <section class="contact-section">
   <div class="container">
     <div class="header-text">
@@ -43,11 +51,13 @@
     padding: 20px 20px;
     text-align: center;
     font-family: 'Arial', sans-serif;
-    margin-top: 50px; /* Reducido para acercarlo al menú hamburguesa */
+    margin-top: 25px; /* Reducido para acercarlo al menú hamburguesa */
     color: white;
     
-    /* Propiedades para centrar vertical y horizontalmente */
-    min-height: calc(100vh - 100px); /* Ocupa todo el alto de la pantalla restante */
+    /* Fija el tamaño exacto de la pantalla y oculta cualquier desborde */
+    height: calc(100vh - 40px);
+    box-sizing: border-box;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
     justify-content: center;

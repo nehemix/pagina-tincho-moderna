@@ -1,11 +1,8 @@
 <script lang="ts">
-  // Bloquea el scroll de toda la página al entrar a Contacto para evitar que se desarme
   $effect(() => {
-    document.body.style.overflow = 'hidden';
     document.body.classList.add('transparent-nav-page');
     
     return () => { 
-      document.body.style.overflow = ''; 
       document.body.classList.remove('transparent-nav-page');
     };
   });

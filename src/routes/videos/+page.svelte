@@ -46,6 +46,13 @@
     margin-left: auto;
     margin-right: auto;
   }
+
+  /* Ajuste para Tablet: El navbar apilado ocupa más espacio, bajamos el contenido */
+  @media (min-width: 768px) and (max-width: 1199px) {
+    .videos-section {
+      margin-top: 160px;
+    }
+  }
   .page-title {
     text-align: center;
     color: var(--primary-green, #1b732a);

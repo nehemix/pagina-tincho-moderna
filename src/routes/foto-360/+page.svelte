@@ -35,6 +35,13 @@
     animation: slideInFromTop 1s ease-out backwards;
   }
 
+  /* Ajuste para Tablet: El navbar apilado ocupa más espacio, bajamos el contenido */
+  @media (min-width: 768px) and (max-width: 1199px) {
+    .sirv-grid {
+      margin-top: 160px;
+    }
+  }
+
   @keyframes slideInFromTop {
     0% {
       opacity: 0;

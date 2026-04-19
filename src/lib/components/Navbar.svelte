@@ -73,7 +73,7 @@
 		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 	}
 
-	@media (min-width: 1100px) {
+	@media (min-width: 1200px) {
 		.navbar {
 			height: 80px;
 			padding: 0;
@@ -137,7 +137,8 @@
 		border-top: 1px solid rgba(255, 255, 255, 0.1);
 	}
 
-	@media (min-width: 1100px) {
+	/* Reseteo del menú móvil para Tablet y PC (horizontal) */
+	@media (min-width: 768px) {
 		.nav-links {
 			position: static;
 			width: auto;
@@ -145,14 +146,33 @@
 			overflow: visible;
 			background: transparent;
 			flex-direction: row;
-			justify-content: flex-end;
 			padding: 0;
-			gap: 30px;
 			transition: none;
 		}
 		.nav-links.mobile-open {
 			border-top: none;
 			padding: 0;
+		}
+	}
+
+	/* Breakpoint intermedio (Tablet): Navbar debajo del logo y centrado */
+	@media (min-width: 768px) and (max-width: 1199px) {
+		.nav-container {
+			flex-direction: column;
+			gap: 15px;
+		}
+		.nav-links {
+			justify-content: center;
+			flex-wrap: wrap;
+			gap: 20px;
+		}
+	}
+
+	/* Layout de PC (Logo a la izquierda, Navbar a la derecha) */
+	@media (min-width: 1200px) {
+		.nav-links {
+			justify-content: flex-end;
+			gap: 30px;
 		}
 	}
 
@@ -168,7 +188,13 @@
 		white-space: nowrap;
 	}
 
-	@media (min-width: 1100px) {
+	@media (min-width: 768px) and (max-width: 1199px) {
+		.nav-links a {
+			font-size: 1.1rem;
+		}
+	}
+
+	@media (min-width: 1200px) {
 		.nav-links a {
 			font-size: 0.9rem;
 		}
@@ -210,7 +236,7 @@
 		z-index: 3001;
 	}
 
-	@media (min-width: 1100px) {
+	@media (min-width: 768px) {
 		.hamburger {
 			display: none;
 		}

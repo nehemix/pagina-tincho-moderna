@@ -75,12 +75,19 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    justify-content: flex-start; /* Alinea el contenido arriba en vez de centrarlo */
+    justify-content: center; /* Alinea el contenido al medio verticalmente */
     align-items: center;
 
     animation: slideInFromTop 1s ease-out forwards;
     opacity: 0;
     transform: translateY(-50px);
+  }
+
+  /* Ajuste para Tablet: El navbar apilado ocupa más espacio, bajamos el contenido interno */
+  @media (min-width: 768px) and (max-width: 1199px) {
+    .contact-section {
+      padding-top: 160px;
+    }
   }
 
   /* Animación de deslizamiento desde arriba */

@@ -45,8 +45,29 @@ body {
   margin-right: auto;
 }
 
+/* Ajuste para Tablet: El navbar apilado ocupa más espacio, bajamos el contenido */
+@media (min-width: 768px) and (max-width: 1199px) {
+  .gallery-row {
+    margin-top: 160px;
+  }
+}
+
 @media (min-width: 1200px) {
   .gallery-row {
     margin-top: 100px; /* Restaura el margen original en PC */
+  }
+}
+
+/* Clase de utilidad para centrar verticalmente (ej: página de Contacto) */
+.centrar-vertical {
+  min-height: calc(100vh - 100px); /* Resta el alto aproximado del navbar base */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+@media (min-width: 768px) and (max-width: 1199px) {
+  .centrar-vertical {
+    min-height: calc(100vh - 160px); /* Compensa el navbar más alto en tablet */
   }
 }

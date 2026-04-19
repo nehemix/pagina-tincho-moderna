@@ -63,6 +63,7 @@
 		background: transparent;
 		z-index: 3000;
 		display: flex;
+		flex-wrap: nowrap;
 		align-items: center;
 		border-bottom: 1px solid transparent;
 		transition: background 0.4s ease, backdrop-filter 0.4s ease, border-color 0.4s ease;
@@ -86,6 +87,7 @@
 		margin: 0 auto;
 		padding: 0 20px;
 		display: flex;
+		flex-wrap: nowrap;
 		flex-direction: row;
 		justify-content: space-between;
 		align-items: center;
@@ -155,7 +157,7 @@
 			background: transparent;
 			flex-direction: row;
 			justify-content: center;
-			flex-wrap: wrap;
+			flex-wrap: nowrap;
 			gap: 20px;
 			padding: 0;
 			transition: none;

@@ -16,7 +16,8 @@
   .whatsapp-float {
     position: fixed;
     bottom: 20px;
-    right: 20px;
+    /* Alineación dinámica: mantiene 20px en móvil, pero se alinea al contenedor de 1200px en PC */
+    right: max(20px, calc(50% - 600px + 20px));
     z-index: 999;
     width: 70px;
     height: 70px;

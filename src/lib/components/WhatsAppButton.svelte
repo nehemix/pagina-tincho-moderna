@@ -9,7 +9,7 @@
   rel="noopener noreferrer"
   aria-label="Chat en WhatsApp"
 >
-  <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" />
+  <img src="WhatsApp.svg" alt="WhatsApp" />
 </a>
 
 <style>

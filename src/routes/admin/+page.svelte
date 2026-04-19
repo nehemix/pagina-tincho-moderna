@@ -50,8 +50,10 @@
       if (!groups[folder]) groups[folder] = [];
       groups[folder].push(img);
     }
-    // Ordenamos alfabéticamente los nombres de carpetas
-    return Object.keys(groups).sort().reduce((acc, key) => { acc[key] = groups[key]; return acc; }, {} as Record<string, string[]>);
+    // Ordenamos de forma descendente (la última arriba) y natural los nombres de las carpetas
+    return Object.keys(groups)
+      .sort((a, b) => b.localeCompare(a, undefined, { numeric: true, sensitivity: 'base' }))
+      .reduce((acc, key) => { acc[key] = groups[key]; return acc; }, {} as Record<string, string[]>);
   }
 
   let normalGroups = $derived(groupImagesByFolder(allImages.filter(img => !img.includes('/360/') && !img.includes('/inicio/'))));

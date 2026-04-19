@@ -1,2 +1,8 @@
+# Bloquear rutas sensibles e internas
 User-agent: *
-Disallow: /
+Disallow: /admin/
+Disallow: /api/
+Allow: /
+
+# Sitemap (Recomendado incluir la ruta real si cuentas con uno)
+# Sitemap: https://tudominio.com/sitemap.xml

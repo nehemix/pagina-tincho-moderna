@@ -6,27 +6,28 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 	if (!sessionId) {
 		event.locals.user = null;
-		event.locals.session = null;
 		return resolve(event);
 	}
 
 	const session = await dbApi.getSession(sessionId);
-	let user = null;
 
-	if (session) {
-		user = await dbApi.getUserById(session.userId);
-	}
-
-	// Verificaciones de Seguridad: ¿Existe la sesión? ¿Existe el usuario? ¿La sesión caducó?
-	if (!session || !user || Date.now() >= session.expiresAt) {
-		if (session) await dbApi.deleteSession(sessionId); // Limpiamos la BD si caducó
+	// Si la sesión no existe o ya expiró
+	if (!session || session.expiresAt < Date.now()) {
 		event.cookies.delete('admin_session', { path: '/' });
 		event.locals.user = null;
-		event.locals.session = null;
-	} else {
-		event.locals.session = session;
-		event.locals.user = { id: user.id, username: user.username }; // Asignamos sin la contraseña hasheada
+		return resolve(event);
 	}
+
+	const user = await dbApi.getUserById(session.userId);
+
+	if (!user) {
+		event.cookies.delete('admin_session', { path: '/' });
+		event.locals.user = null;
+		return resolve(event);
+	}
+
+	// Sesión válida: asignamos el usuario a locals para que toda la app lo conozca
+	event.locals.user = { id: user.id, username: user.username };
 
 	return resolve(event);
 };

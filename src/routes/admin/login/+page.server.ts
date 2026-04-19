@@ -24,7 +24,7 @@ export const actions: Actions = {
 			return fail(400, { error: 'Credenciales inválidas.' });
 		}
 
-		const user = await dbApi.getUserByUsername(usuario);
+		const user = await dbApi.getUserByUsername(usuario.trim());
 
 		// Mitigación de Timing Attacks (ataques de tiempo):
 		// Demoramos la respuesta aleatoriamente si el usuario no existe
@@ -47,6 +47,10 @@ export const actions: Actions = {
 			await new Promise((resolve) => setTimeout(resolve, Math.random() * 300 + 100));
 			return fail(400, { error: 'Credenciales inválidas.' });
 		}
+
+		// Mantenimiento: limpiar sesiones expiradas y cerrar sesiones previas del usuario
+		await dbApi.cleanExpiredSessions();
+		await dbApi.deleteUserSessions(user.id);
 
 		// Crear la sesión en lowdb
 		const sessionId = crypto.randomUUID();

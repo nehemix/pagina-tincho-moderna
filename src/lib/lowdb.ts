@@ -158,6 +158,25 @@ export const dbApi = {
         });
     },
 
+    deleteUserSessions: async (userId: string): Promise<void> => {
+        const db = await getDb();
+        await db.update((data) => {
+            if (data.sessions) {
+                data.sessions = data.sessions.filter(s => s.userId !== userId);
+            }
+        });
+    },
+
+    cleanExpiredSessions: async (): Promise<void> => {
+        const db = await getDb();
+        const now = Date.now();
+        await db.update((data) => {
+            if (data.sessions) {
+                data.sessions = data.sessions.filter(s => s.expiresAt > now);
+            }
+        });
+    },
+
     getUserById: async (id: string): Promise<User | undefined> => {
         const db = await getDb();
         return (db.data.users || []).find(u => u.id === id);

@@ -10,7 +10,7 @@ export const handle: Handle = async ({ event, resolve }) => {
     // 2. Aislamiento Cross-Origin (COOP, COEP, CORP)
     // Previene ataques de canal lateral (ej. Spectre) aislando el contexto de navegación
     response.headers.set('Cross-Origin-Opener-Policy', 'same-origin');
-    response.headers.set('Cross-Origin-Embedder-Policy', 'require-corp');
+    response.headers.set('Cross-Origin-Embedder-Policy', 'unsafe-none');
     response.headers.set('Cross-Origin-Resource-Policy', 'same-origin');
 
     // 3. Prevención de Clickjacking (Compatibilidad legacy)

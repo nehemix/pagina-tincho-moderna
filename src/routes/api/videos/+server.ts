@@ -1,26 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import fs from 'fs/promises';
-import path from 'path';
-
-// Guardaremos los enlaces de video en un archivo JSON en la raíz del proyecto
-const DATA_FILE = 'data/videos.json';
-
-async function getVideosData() {
-    try {
-        await fs.mkdir(path.dirname(DATA_FILE), { recursive: true });
-        const content = await fs.readFile(DATA_FILE, 'utf-8');
-        return JSON.parse(content);
-    } catch (e: any) {
-        if (e.code === 'ENOENT') return []; // Si no existe el archivo, devuelve un arreglo vacío
-        throw e;
-    }
-}
-
-async function saveVideosData(data: any) {
-    await fs.mkdir(path.dirname(DATA_FILE), { recursive: true });
-    await fs.writeFile(DATA_FILE, JSON.stringify(data, null, 2));
-}
+import { dbApi } from '$lib/lowdb';
 
 // Función para extraer el ID de un enlace de YouTube
 function extractYouTubeId(url: string) {
@@ -35,8 +15,12 @@ export const GET: RequestHandler = async ({ setHeaders }) => {
         'Cache-Control': 'no-cache, no-store, must-revalidate'
     });
     try {
-        const videos = await getVideosData();
-        return json({ success: true, videos });
+        const videos = await dbApi.getVideos();
+        // Ordenar por fecha de creación (si no existe 'createdAt' en los viejos, asume fecha 0)
+        const sortedVideos = [...videos].sort((a, b) => 
+            new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime()
+        );
+        return json({ success: true, videos: sortedVideos });
     } catch (e: any) {
         return json({ success: false, error: 'No se pudo leer la base de datos de videos.' }, { status: 500 });
     }
@@ -50,15 +34,16 @@ export const POST: RequestHandler = async ({ request }) => {
         const id = extractYouTubeId(url);
         if (!id) throw error(400, 'Enlace de YouTube no válido.');
 
-        const videos = await getVideosData();
-        if (videos.some((v: any) => v.id === id)) {
+        const videos = await dbApi.getVideos();
+        const existingVideo = videos.find(v => v.id === id);
+        if (existingVideo) {
             throw error(400, 'Este video ya ha sido agregado.');
         }
 
-        videos.push({ id, url });
-        await saveVideosData(videos);
+        const newVideo = { id, url, createdAt: new Date().toISOString() };
+        await dbApi.addVideo(newVideo);
 
-        return json({ success: true, message: 'Video agregado con éxito.', videos });
+        return json({ success: true, message: 'Video agregado con éxito.', video: newVideo });
     } catch (e: any) {
         if (e.status) return json({ success: false, error: e.body.message }, { status: e.status });
         return json({ success: false, error: e.message || 'Error desconocido' }, { status: 500 });
@@ -70,9 +55,7 @@ export const DELETE: RequestHandler = async ({ request }) => {
         const { id } = await request.json();
         if (!id) throw error(400, 'Falta el ID del video.');
 
-        let videos = await getVideosData();
-        videos = videos.filter((v: any) => v.id !== id);
-        await saveVideosData(videos);
+        await dbApi.deleteVideo(id);
 
         return json({ success: true, message: 'Video eliminado de la galería.' });
     } catch (e: any) {

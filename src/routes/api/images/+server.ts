@@ -2,25 +2,10 @@ import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import fs from 'fs/promises';
 import path from 'path';
+import { dbApi } from '$lib/lowdb';
 
 // Las imágenes se guardarán en la carpeta `static/images`
 const UPLOAD_DIR = 'static/images';
-const ORDER_FILE = 'data/image-order.json';
-
-async function getOrderData(): Promise<string[]> {
-    try {
-        await fs.mkdir(path.dirname(ORDER_FILE), { recursive: true });
-        const content = await fs.readFile(ORDER_FILE, 'utf-8');
-        return JSON.parse(content);
-    } catch (e: any) {
-        return [];
-    }
-}
-
-async function saveOrderData(order: string[]) {
-    await fs.mkdir(path.dirname(ORDER_FILE), { recursive: true });
-    await fs.writeFile(ORDER_FILE, JSON.stringify(order, null, 2));
-}
 
 // Función para obtener todos los archivos de un directorio de forma recursiva
 async function getFiles(dir: string): Promise<string[]> {
@@ -84,7 +69,9 @@ export const GET: RequestHandler = async ({ url, setHeaders }) => {
             images = images.filter(img => img.toLowerCase().includes(`/${folderFilter}/`));
         }
 
-        const order = await getOrderData();
+        // Obtener orden desde lowdb
+        const order = await dbApi.getImageOrder();
+        
         if (order.length > 0) {
             images.sort((a, b) => {
                 const indexA = order.indexOf(a);
@@ -170,6 +157,11 @@ export const PUT: RequestHandler = async ({ request }) => {
         const oldPath = path.join(UPLOAD_DIR, safeOldFolder);
         const newPath = path.join(UPLOAD_DIR, safeNewFolder);
 
+        // Renombramos la ruta base en lowdb para las imágenes afectadas
+        const oldDbPattern = `/${safeOldFolder}/`;
+        const newDbPattern = `/${safeNewFolder}/`;
+        await dbApi.renameImageFolderInOrder(oldDbPattern, newDbPattern);
+
         await fs.rename(oldPath, newPath);
         return json({ success: true, message: 'Carpeta renombrada con éxito.' });
     } catch (e: any) {
@@ -183,7 +175,10 @@ export const PATCH: RequestHandler = async ({ request }) => {
     try {
         const body = await request.json();
         if (body.order && Array.isArray(body.order)) {
-            await saveOrderData(body.order);
+            
+            // Actualizar arreglo de orden en lowdb
+            await dbApi.updateImageOrder(body.order);
+            
             return json({ success: true, message: 'Orden guardado con éxito.' });
         }
         throw error(400, 'Formato de orden inválido.');
@@ -202,6 +197,10 @@ export const DELETE: RequestHandler = async ({ request }) => {
         if (body.folderPath) {
             const safeFolderPath = path.normalize(body.folderPath).replace(/^(\.\.[\/\\])+/, '');
             const dirPath = path.join('static', 'images', safeFolderPath);
+            
+            // Eliminar registros afectados en lowdb
+            await dbApi.removeFolderFromOrder(`/${safeFolderPath}/`);
+            
             await fs.rm(dirPath, { recursive: true, force: true });
             return json({ success: true, message: `Carpeta "${safeFolderPath}" y su contenido eliminados.` });
         }
@@ -214,6 +213,10 @@ export const DELETE: RequestHandler = async ({ request }) => {
         }
 
         let deletedCount = 0;
+        
+        // Eliminar metadata de lowdb
+        await dbApi.removeImagesFromOrder(pathsToDelete);
+
         for (const imgPath of pathsToDelete) {
             // Medida de seguridad para evitar que se borren archivos fuera de `static`
             const filePath = path.join('static', imgPath);

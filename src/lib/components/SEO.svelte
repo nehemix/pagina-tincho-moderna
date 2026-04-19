@@ -1,6 +1,6 @@
 <script lang="ts">
     let {
-        title = 'Fotógrafo Profesional | Tincho Fotografía',
+        title = 'Fotógrafo Profesional | Martin Mangudo Fotografía',
         description = 'Servicios de fotografía profesional: producto, 360°, retratos e industria.',
         url = 'https://immediately-forbes-memo-shopzilla.trycloudflare.com/',
         image = 'https://tudominio.com/images/seo-banner.jpg'

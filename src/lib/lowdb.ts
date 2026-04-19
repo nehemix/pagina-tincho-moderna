@@ -9,15 +9,31 @@ export interface Video {
     createdAt: string;
 }
 
+export interface User {
+    id: string;
+    username: string;
+    passwordHash: string;
+}
+
+export interface Session {
+    id: string;
+    userId: string;
+    expiresAt: number;
+}
+
 export interface Schema {
     videos: Video[];
     imageOrder: string[];
+    users: User[];
+    sessions: Session[];
 }
 
 // 2. Valores por defecto si el archivo no existe o está vacío
 const defaultData: Schema = {
     videos: [],
-    imageOrder: []
+    imageOrder: [],
+    users: [],
+    sessions: []
 };
 
 // 3. Configuración de ruta segura
@@ -112,5 +128,38 @@ export const dbApi = {
         await db.update((data) => {
             data.imageOrder = data.imageOrder.filter(path => !path.includes(folderPattern));
         });
+    },
+
+    // --- USUARIOS Y SESIONES ---
+    getUserByUsername: async (username: string): Promise<User | undefined> => {
+        const db = await getDb();
+        return (db.data.users || []).find(u => u.username === username);
+    },
+
+    addSession: async (session: Session): Promise<void> => {
+        const db = await getDb();
+        await db.update((data) => {
+            if (!data.sessions) data.sessions = [];
+            data.sessions.push(session);
+        });
+    },
+
+    getSession: async (id: string): Promise<Session | undefined> => {
+        const db = await getDb();
+        return (db.data.sessions || []).find(s => s.id === id);
+    },
+
+    deleteSession: async (id: string): Promise<void> => {
+        const db = await getDb();
+        await db.update((data) => {
+            if (data.sessions) {
+                data.sessions = data.sessions.filter(s => s.id !== id);
+            }
+        });
+    },
+
+    getUserById: async (id: string): Promise<User | undefined> => {
+        const db = await getDb();
+        return (db.data.users || []).find(u => u.id === id);
     }
 };

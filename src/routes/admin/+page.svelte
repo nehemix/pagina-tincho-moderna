@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { PageData } from './$types';
+  import { enhance } from '$app/forms';
   import { galleryConfig } from '$lib/config/gallery';
   import { Toaster, toast } from 'svelte-sonner';
   import { onMount } from 'svelte';
@@ -319,8 +320,15 @@
 {:else}
   <div class="admin-container">
     <div class="header">
-      <h1>Panel de Administración</h1>
-      <p>Gestiona las fotos de tu portafolio. Los cambios se verán reflejados en el sitio.</p>
+      <div class="header-content">
+        <div>
+          <h1>Panel de Administración</h1>
+          <p>Gestiona las fotos de tu portafolio. Los cambios se verán reflejados en el sitio.</p>
+        </div>
+        <form method="POST" action="/admin/logout" use:enhance>
+          <button type="submit" class="btn-logout" title="Cerrar sesión de forma segura">🚪 Cerrar Sesión</button>
+        </form>
+      </div>
     </div>
 
     <!-- Controles de Subida -->
@@ -490,8 +498,11 @@
 
 <style>
   .admin-container { max-width: 1200px; margin: 100px auto 40px; padding: 0 20px; }
+  .header-content { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 15px; }
   .header h1 { font-size: 2.5rem; color: var(--primary-green); margin-bottom: 5px; }
   .header p { color: #aaa; margin-bottom: 30px; }
+  .btn-logout { background: #d32f2f; color: white; border: none; padding: 10px 18px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: background 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+  .btn-logout:hover { background: #b71c1c; transform: translateY(-1px); }
   .upload-panel { background: #1e1e1e; border-radius: 12px; padding: 25px; margin-bottom: 40px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
   .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 15px;}
   .btn-refresh {

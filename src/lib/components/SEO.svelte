@@ -12,7 +12,7 @@
     } = $props();
 
     // Schema markup para SEO Local y de Negocio
-    const schemaLD = {
+    let schemaLD = $derived({
         "@context": "https://schema.org",
         "@type": "PhotographyBusiness",
         "name": "Martin Mangudo Fotografía",
@@ -27,7 +27,7 @@
             "addressCountry": "AR"
         },
         "priceRange": "$$"
-    };
+    });
 </script>
 
 <svelte:head>

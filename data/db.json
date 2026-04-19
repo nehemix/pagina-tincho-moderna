@@ -437,5 +437,34 @@
     "/images/360/zapatilla/img_0_0_7.avif",
     "/images/360/zapatilla/img_0_0_8.avif",
     "/images/360/zapatilla/img_0_0_9.avif"
+  ],
+  "users": [
+    {
+      "id": "cb701a94-caa0-4161-b1b8-85547d4c8126",
+      "username": "nehemi",
+      "passwordHash": "$argon2id$v=19$m=65536,t=2,p=1$MMLEzlIjcAqUTwR8G8Acy2yozuAw5Kcpm0sb+MAz9Z0$bEppnlkn1BuyPv93LwvTTyz6bGiRa1mOxUIF3vC+cmU"
+    }
+  ],
+  "sessions": [
+    {
+      "id": "3d9c5d3e-4221-46a1-8bd8-2c276e28e886",
+      "userId": "152046f8-f53a-4c2e-8329-f8a0e9e2715e",
+      "expiresAt": 1777189683314
+    },
+    {
+      "id": "866db7e0-d827-4a6b-9b5a-9cf21dfd416d",
+      "userId": "152046f8-f53a-4c2e-8329-f8a0e9e2715e",
+      "expiresAt": 1777189860814
+    },
+    {
+      "id": "d04a1a9a-97f2-47b6-9898-13441c1c2d5c",
+      "userId": "152046f8-f53a-4c2e-8329-f8a0e9e2715e",
+      "expiresAt": 1777190109865
+    },
+    {
+      "id": "693fdac7-500e-43c2-8ee2-f19be5cc0b71",
+      "userId": "152046f8-f53a-4c2e-8329-f8a0e9e2715e",
+      "expiresAt": 1777190146302
+    }
   ]
 }

@@ -1,30 +1,32 @@
 import type { Handle } from '@sveltejs/kit';
+import { dbApi } from '$lib/lowdb';
 
 export const handle: Handle = async ({ event, resolve }) => {
-    const response = await resolve(event);
+	const sessionId = event.cookies.get('admin_session');
 
-    // 1. HTTP Strict Transport Security (HSTS)
-    // Fuerza conexiones HTTPS estrictas por 1 año, incluye subdominios y permite registro preload
-    response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+	if (!sessionId) {
+		event.locals.user = null;
+		event.locals.session = null;
+		return resolve(event);
+	}
 
-    // 2. Aislamiento Cross-Origin (COOP, COEP, CORP)
-    // Previene ataques de canal lateral (ej. Spectre) aislando el contexto de navegación
-    response.headers.set('Cross-Origin-Opener-Policy', 'same-origin');
-    response.headers.set('Cross-Origin-Embedder-Policy', 'unsafe-none');
-    response.headers.set('Cross-Origin-Resource-Policy', 'same-origin');
+	const session = await dbApi.getSession(sessionId);
+	let user = null;
 
-    // 3. Prevención de Clickjacking (Compatibilidad legacy)
-    // Previene que la página sea embebida en iframes maliciosos. 
-    // Se complementa con 'frame-ancestors' en la CSP.
-    response.headers.set('X-Frame-Options', 'DENY');
+	if (session) {
+		user = await dbApi.getUserById(session.userId);
+	}
 
-    // 4. Prevención de MIME-type sniffing
-    // Evita que el navegador intente adivinar el tipo de contenido y ejecute scripts accidentalmente
-    response.headers.set('X-Content-Type-Options', 'nosniff');
+	// Verificaciones de Seguridad: ¿Existe la sesión? ¿Existe el usuario? ¿La sesión caducó?
+	if (!session || !user || Date.now() >= session.expiresAt) {
+		if (session) await dbApi.deleteSession(sessionId); // Limpiamos la BD si caducó
+		event.cookies.delete('admin_session', { path: '/' });
+		event.locals.user = null;
+		event.locals.session = null;
+	} else {
+		event.locals.session = session;
+		event.locals.user = { id: user.id, username: user.username }; // Asignamos sin la contraseña hasheada
+	}
 
-    // 5. Referrer Policy
-    // Protege la privacidad de la URL evitando enviar la ruta completa a orígenes externos
-    response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-
-    return response;
+	return resolve(event);
 };

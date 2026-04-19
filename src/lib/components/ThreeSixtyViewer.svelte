@@ -56,6 +56,14 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
+<svelte:head>
+  {#if isExpanded}
+    {#each images as img}
+      <link rel="preload" as="image" href={img} />
+    {/each}
+  {/if}
+</svelte:head>
+
 <div class="grid-card">
   <div class="static-container" tabindex="0" role="button" aria-label="Abrir vista 360" onclick={() => isExpanded = true} onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && (isExpanded = true)}>
     <img 

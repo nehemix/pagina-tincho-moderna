@@ -13,7 +13,7 @@ body {
   background-attachment: fixed;
   color: white;
   margin: 0;
-  font-family: 'Arial', sans-serif;
+  font-family: 'Roboto', 'Lato', sans-serif;
   overflow-x: hidden;
   overflow-y: scroll; /* Fuerza la barra vertical siempre para evitar que el Navbar salte */
 }

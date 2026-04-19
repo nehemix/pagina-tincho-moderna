@@ -89,6 +89,7 @@
 		flex-direction: row;
 		justify-content: space-between;
 		align-items: center;
+		transition: all 0.4s ease-in-out;
 	}
 
 	/* --- BRAND / LOGO --- */
@@ -102,6 +103,9 @@
 		font-style: normal;
 		letter-spacing: -1px; /* Para que quede más compacto, como en la imagen */
 		text-transform: uppercase;
+		display: flex;
+		flex-wrap: nowrap;
+		white-space: nowrap;
 	}
 	.first-name {
 		color: #1b732a;
@@ -137,8 +141,12 @@
 		border-top: 1px solid rgba(255, 255, 255, 0.1);
 	}
 
-	/* Reseteo del menú móvil para Tablet y PC (horizontal) */
+	/* Layout y reseteo del menú móvil para Tablet y superiores */
 	@media (min-width: 768px) {
+		.nav-container {
+			flex-direction: column;
+			gap: 15px;
+		}
 		.nav-links {
 			position: static;
 			width: auto;
@@ -146,6 +154,9 @@
 			overflow: visible;
 			background: transparent;
 			flex-direction: row;
+			justify-content: center;
+			flex-wrap: wrap;
+			gap: 20px;
 			padding: 0;
 			transition: none;
 		}
@@ -155,23 +166,15 @@
 		}
 	}
 
-	/* Breakpoint intermedio (Tablet): Navbar debajo del logo y centrado */
-	@media (min-width: 768px) and (max-width: 1199px) {
-		.nav-container {
-			flex-direction: column;
-			gap: 15px;
-		}
-		.nav-links {
-			justify-content: center;
-			flex-wrap: wrap;
-			gap: 20px;
-		}
-	}
-
 	/* Layout de PC (Logo a la izquierda, Navbar a la derecha) */
 	@media (min-width: 1200px) {
+		.nav-container {
+			flex-direction: row;
+			gap: 0;
+		}
 		.nav-links {
 			justify-content: flex-end;
+			flex-wrap: nowrap;
 			gap: 30px;
 		}
 	}
@@ -188,7 +191,7 @@
 		white-space: nowrap;
 	}
 
-	@media (min-width: 768px) and (max-width: 1199px) {
+	@media (min-width: 768px) {
 		.nav-links a {
 			font-size: 1.1rem;
 		}

@@ -2,6 +2,8 @@ import fs from 'fs/promises';
 import path from 'path';
 import { randomUUID } from 'crypto';
 
+declare const Bun: any;
+
 async function createAdmin() {
 	const username = 'nehemi'; // Cambia esto
 	const password = '1234'; // Cambia esto

@@ -4,7 +4,7 @@
   import { galleryConfig } from '$lib/config/gallery';
   import { Toaster, toast } from 'svelte-sonner';
   import { onMount } from 'svelte';
-  import { slide } from 'svelte/transition';
+  import { slide, fade, scale } from 'svelte/transition';
   import { flip } from 'svelte/animate';
 
   // Los datos ahora vienen del loader (+page.ts)
@@ -22,7 +22,10 @@
   let newFolderName = $state(''); // Nombre para nueva carpeta
   let expandedFolders = $state<Record<string, boolean>>({}); // Control de los acordeones
   let isDraggingOver = $state(false); // Estado visual para el Drag & Drop
-  let fileInput = $state<HTMLInputElement | null>(null);
+  let fileInputFiles = $state<HTMLInputElement | null>(null);
+  let fileInputFolder = $state<HTMLInputElement | null>(null);
+  let pendingFiles = $state<File[]>([]);
+  let showUploadModal = $state(false);
   let selectedImages = $state<string[]>([]);
   
   let allVideos = $state<{id: string, url: string}[]>([]);
@@ -67,6 +70,7 @@
     selectedImages = []; // Limpia la selección al cambiar de pestaña
     selectedExistingFolder = '__NEW__'; 
     newFolderName = '';
+    pendingFiles = [];
   }
 
   // Refrescar videos
@@ -106,8 +110,16 @@
   // Manejador Drag & Drop
   function handleDrop(e: DragEvent) {
     if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
-      if (fileInput) fileInput.files = e.dataTransfer.files;
+      pendingFiles = Array.from(e.dataTransfer.files);
       toast.success(`${e.dataTransfer.files.length} archivo(s) agregados. Especifica la carpeta y haz clic en Subir.`);
+    }
+  }
+
+  // Manejador genérico para cuando se eligen archivos por ventana
+  function handleFilesChanged(e: Event) {
+    const input = e.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      pendingFiles = Array.from(input.files);
     }
   }
 
@@ -115,8 +127,8 @@
   async function uploadImage(e: Event) {
     e.preventDefault();
     
-    if (!fileInput?.files || fileInput.files.length === 0) return toast.warning('Por favor, selecciona al menos un archivo.');
-    const allFiles = Array.from(fileInput.files);
+    if (pendingFiles.length === 0) return toast.warning('Por favor, selecciona al menos un archivo.');
+    const allFiles = pendingFiles;
 
     let targetFolder = '';
     if (activeTab === 'inicio') {
@@ -143,7 +155,9 @@
 
       if (data.success) {
         await refreshImages();
-        if (fileInput) fileInput.value = '';
+        pendingFiles = [];
+        if (fileInputFiles) fileInputFiles.value = '';
+        if (fileInputFolder) fileInputFolder.value = '';
         selectedExistingFolder = '__NEW__';
         newFolderName = '';
         
@@ -375,9 +389,20 @@
           <div class="input-group drop-zone {isDraggingOver ? 'dragging' : ''}"
                ondragover={(e) => { e.preventDefault(); isDraggingOver = true; }}
                ondragleave={() => isDraggingOver = false}
-               ondrop={(e) => { e.preventDefault(); isDraggingOver = false; handleDrop(e); }}>
-            <label for="file">Elegir o arrastrar archivo(s) aquí:</label>
-            <input type="file" id="file" name="files" bind:this={fileInput} accept="image/avif" multiple class="file-input" />
+               ondrop={(e) => { e.preventDefault(); isDraggingOver = false; handleDrop(e); }}
+               onclick={() => showUploadModal = true}
+               role="button" tabindex="0" onkeydown={(e) => e.key === 'Enter' && (showUploadModal = true)}>
+            
+            <div class="drop-zone-content">
+              {#if pendingFiles.length > 0}
+                <span class="file-count">✅ {pendingFiles.length} archivo(s) listos para subir. Haz clic para cambiar.</span>
+              {:else}
+                <span class="placeholder">📁 Haz clic aquí para elegir qué subir o arrastra archivos</span>
+              {/if}
+            </div>
+            
+            <input type="file" bind:this={fileInputFiles} onchange={handleFilesChanged} accept="image/avif" multiple style="display:none;" />
+            <input type="file" bind:this={fileInputFolder} onchange={handleFilesChanged} accept="image/avif" multiple webkitdirectory style="display:none;" />
           </div>
 
           <button type="submit" class="btn-upload" disabled={isUploading}>
@@ -493,6 +518,30 @@
         {@render folderAccordion(folderName, images, true)}
       {/each}
     {/if}
+
+    <!-- Modal de Selección de Subida -->
+    {#if showUploadModal}
+      <!-- svelte-ignore a11y_click_events_have_key_events -->
+      <!-- svelte-ignore a11y_no_static_element_interactions -->
+      <div class="modal-backdrop" onclick={() => showUploadModal = false} transition:fade={{duration: 200}}>
+        <div class="modal-content" onclick={(e) => e.stopPropagation()} transition:scale={{duration: 300, start: 0.95}}>
+          <h2>¿Qué deseas subir?</h2>
+          <div class="modal-options">
+            <button class="modal-card" onclick={() => { fileInputFiles?.click(); showUploadModal = false; }}>
+              <span class="icon">📄</span>
+              <h3>Archivos Individuales</h3>
+              <p>Selecciona una o varias fotos individualmente</p>
+            </button>
+            <button class="modal-card" onclick={() => { fileInputFolder?.click(); showUploadModal = false; }}>
+              <span class="icon">🗂️</span>
+              <h3>Carpeta Entera</h3>
+              <p>Sube todos los archivos contenidos en una carpeta</p>
+            </button>
+          </div>
+          <button class="btn-cancel-modal" onclick={() => showUploadModal = false}>Cancelar</button>
+        </div>
+      </div>
+    {/if}
   </div>
 {/if}
 
@@ -525,9 +574,11 @@
   .btn-upload { background: var(--primary-green); color: white; border: none; padding: 12px 25px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: background 0.3s; }
   .btn-upload:hover:not(:disabled) { background: #0a4f1a; }
 
-  .drop-zone { border: 2px dashed #444; padding: 10px; border-radius: 8px; transition: border-color 0.3s, background 0.3s; }
+  .drop-zone { border: 2px dashed #444; padding: 35px 20px; border-radius: 8px; transition: border-color 0.3s, background 0.3s; cursor: pointer; text-align: center; }
   .drop-zone.dragging { border-color: var(--primary-green); background: rgba(76, 175, 80, 0.1); }
-  .file-input { cursor: pointer; }
+  .drop-zone:hover { border-color: #888; background: #252525; }
+  .file-count { color: var(--primary-green); font-weight: bold; font-size: 1.1rem; }
+  .placeholder { color: #aaa; font-size: 1rem; }
   
   .selection-panel { background: #333; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; }
   .selection-panel span { font-weight: bold; color: white; margin-right: auto; }
@@ -561,4 +612,22 @@
   .img-path { color: #ccc; font-size: 0.8rem; text-align: center; margin-bottom: 15px; word-break: break-all; }
   .btn-delete { background: #d32f2f; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }
   .btn-delete:hover { background: #b71c1c; }
+
+  /* Estilos del Modal */
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+  .modal-content { background: #1e1e1e; padding: 40px; border-radius: 16px; border: 1px solid #333; text-align: center; max-width: 500px; width: 90%; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+  .modal-content h2 { margin-top: 0; margin-bottom: 30px; color: white; font-size: 1.5rem; }
+  .modal-options { display: flex; gap: 20px; margin-bottom: 30px; }
+  .modal-card { flex: 1; background: #2a2a2a; border: 2px solid #333; padding: 30px 20px; border-radius: 12px; cursor: pointer; transition: all 0.2s ease; display: flex; flex-direction: column; align-items: center; gap: 10px; color: white; }
+  .modal-card:hover, .modal-card:focus-visible { background: #333; border-color: var(--primary-green); transform: translateY(-5px); outline: none; }
+  .modal-card .icon { font-size: 3rem; margin-bottom: 10px; }
+  .modal-card h3 { margin: 0; font-size: 1.2rem; }
+  .modal-card p { margin: 0; font-size: 0.85rem; color: #aaa; }
+  .btn-cancel-modal { background: transparent; color: #ccc; border: 1px solid #555; padding: 10px 30px; border-radius: 6px; cursor: pointer; transition: all 0.2s; font-size: 1rem; width: 100%; }
+  .btn-cancel-modal:hover { background: #444; color: white; }
+
+  @media (max-width: 600px) {
+    .modal-options { flex-direction: column; }
+    .modal-content { padding: 30px 20px; }
+  }
 </style>

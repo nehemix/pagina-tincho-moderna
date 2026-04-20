@@ -5,7 +5,7 @@ import { randomUUID } from 'crypto';
 declare const Bun: any;
 
 async function createAdmin() {
-	const username = 'nehemi'; // Cambia esto
+	const username = 'martin'; // Cambia esto
 	const password = '1234'; // Cambia esto
 
 	console.log('Hasheando contraseña...');

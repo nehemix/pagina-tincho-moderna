@@ -20,10 +20,17 @@ bun x sv@0.15.1 create --template minimal --types ts --add prettier eslint tailw
 
 ## Developing
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+Before starting the development server, you need to set up the local database. Create a folder named `data` in the root of the project and an empty `db.json` file inside it:
 
 ```sh
-npm run dev
+mkdir data
+echo "{}" > data/db.json
+```
+
+Once you've installed dependencies with `npm install` (or `pnpm install`, `yarn`, or `bun install`), start a development server:
+
+```sh
+bun run dev
 
 # or start the server and open the app in a new browser tab
 npm run dev -- --open
@@ -34,7 +41,7 @@ npm run dev -- --open
 To create a production version of your app:
 
 ```sh
-npm run build
+bun run build
 ```
 
 You can preview the production build with `npm run preview`.

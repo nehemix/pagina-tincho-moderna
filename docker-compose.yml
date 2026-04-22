@@ -1,0 +1,19 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pagina-tincho-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      # SvelteKit puede bloquear envíos de formularios por protección CSRF. 
+      # Si experimentas errores 403 al hacer login, descomenta la siguiente línea y pon tu dominio real o IP:
+      - ORIGIN=http://localhost:3000
+    volumes:
+      # Persistencia para la base de datos (LowDB) y las imágenes subidas
+      - ./data:/app/data
+      - ./static/images:/app/static/images
+      - ./static/images:/app/build/client/images

@@ -111,6 +111,15 @@
   function handleDrop(e: DragEvent) {
     if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
       pendingFiles = Array.from(e.dataTransfer.files);
+      
+      // Si se arrastra una carpeta, extraemos el nombre automáticamente
+      const firstPath = pendingFiles[0].webkitRelativePath;
+      if (firstPath && firstPath.includes('/')) {
+        const folderName = firstPath.split('/')[0];
+        selectedExistingFolder = '__NEW__';
+        newFolderName = folderName;
+      }
+
       toast.success(`${e.dataTransfer.files.length} archivo(s) agregados. Especifica la carpeta y haz clic en Subir.`);
     }
   }
@@ -120,6 +129,14 @@
     const input = e.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
       pendingFiles = Array.from(input.files);
+
+      // Si se sube una carpeta entera, extraemos el nombre automáticamente
+      const firstPath = pendingFiles[0].webkitRelativePath;
+      if (firstPath && firstPath.includes('/')) {
+        const folderName = firstPath.split('/')[0];
+        selectedExistingFolder = '__NEW__';
+        newFolderName = folderName;
+      }
     }
   }
 
@@ -145,8 +162,17 @@
       const formData = new FormData();
       for (const file of allFiles) {
         formData.append('files', file);
-        // Pasamos la ruta relativa estructurada de la carpeta si existe
-        formData.append('paths', file.webkitRelativePath || file.name);
+        
+        let relativePath = file.webkitRelativePath || file.name;
+        // Evitar el problema de "carpeta/carpeta" al subir un directorio entero
+        if (file.webkitRelativePath && file.webkitRelativePath.includes('/')) {
+          const parts = file.webkitRelativePath.split('/');
+          parts.shift(); // Quita el primer directorio (el nombre original de la carpeta en el cliente)
+          relativePath = parts.join('/');
+        }
+        
+        // Pasamos la ruta relativa estructurada limpia
+        formData.append('paths', relativePath);
       }
       formData.append('folder', targetFolder);
 

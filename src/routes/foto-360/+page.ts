@@ -33,7 +33,23 @@ export const load: PageLoad = async ({ fetch }) => {
 
         // Convertimos a array y ordenamos las imágenes naturalmente (para que 'foto2.jpg' vaya antes que 'foto10.jpg')
         const activeSpins = Array.from(spinsMap.values()).map(spin => {
-            spin.images.sort((a: string, b: string) => a.localeCompare(b, undefined, { numeric: true }));
+            spin.images.sort((a: string, b: string) => {
+                // Solución robusta para Docker:
+                // En contenedores (como Alpine Linux), Node.js muchas veces no incluye full-icu (datos de internacionalización).
+                // Esto provoca que localeCompare con { numeric: true } falle y ordene las fotos como 1, 10, 2, 3...
+                // Para garantizar que la animación 360 no salte ni gire al revés, extraemos el número del frame manualmente.
+                const aMatch = a.match(/\d+/g);
+                const bMatch = b.match(/\d+/g);
+                
+                if (aMatch && bMatch) {
+                    // Usamos el último número encontrado en la ruta del archivo (ej: frame_12.jpg -> 12)
+                    const numA = parseInt(aMatch[aMatch.length - 1], 10);
+                    const numB = parseInt(bMatch[bMatch.length - 1], 10);
+                    
+                    if (numA !== numB) return numA - numB;
+                }
+                return a.localeCompare(b);
+            });
             return spin;
         });
 

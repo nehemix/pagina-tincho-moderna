@@ -15,6 +15,12 @@ services:
       - ORIGIN=https://martinmangudo.duckdns.org
       # Dile a SvelteKit que lea el protocolo real que le pasa Nginx (HTTPS)
       - PROTOCOL_HEADER=x-forwarded-proto
+    # Seguridad: Evita que el contenedor o sus hijos obtengan nuevos privilegios
+    security_opt:
+      - no-new-privileges:true
+    # Quita todas las capacidades extra de root en Linux (tu app no las necesita)
+    cap_drop:
+      - ALL
     volumes:
       # Persistencia para la base de datos (LowDB) y las imágenes subidas
       - ./data:/app/data

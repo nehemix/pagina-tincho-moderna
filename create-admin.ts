@@ -23,7 +23,8 @@ async function createAdmin() {
 	try {
 		// Leemos la base de datos actual directamente
 		const fileData = await fs.readFile(dbPath, 'utf-8');
-		const db = JSON.parse(fileData);
+		// Si el archivo está vacío, inicializamos la estructura por defecto
+		const db = fileData.trim() ? JSON.parse(fileData) : { videos: [], imageOrder: [], users: [], sessions: [] };
 
 		// Por si la base de datos es antigua y aún no tiene el array de users
 		if (!db.users) db.users = [];

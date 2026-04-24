@@ -22,6 +22,13 @@
   });
 </script>
 
+<svelte:head>
+  <!-- Precargar la primera imagen del slider para evitar el parpadeo gris inicial -->
+  {#if heroImages.length > 0}
+    <link rel="preload" as="image" href={heroImages[0]} fetchpriority="high" />
+  {/if}
+</svelte:head>
+
 <section class="hero-slideshow">
   {#each heroImages as imagen, index}
     <img 
@@ -29,6 +36,8 @@
       alt="Fotografía destacada de Martín Mangudo" 
       class="slide"
       class:active={index === currentIndex}
+      loading={index === 0 ? "eager" : "lazy"}
+      fetchpriority={index === 0 ? "high" : "auto"}
     />
   {/each}
   

@@ -30,9 +30,10 @@ async function getFiles(dir: string): Promise<string[]> {
 
 // GET /api/images -> Devuelve una lista de todas las imágenes
 export const GET: RequestHandler = async ({ url, setHeaders }) => {
-    // Implementamos stale-while-revalidate para caché avanzado: sirve al instante, actualiza de fondo
+    // Desactivamos la caché agresiva de 1 hora porque ahora el orden y el slider de inicio
+    // son dinámicos (vienen de la base de datos) y deben reflejarse al instante en el frontend.
     setHeaders({
-        'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400'
+        'Cache-Control': 'no-cache, no-store, must-revalidate'
     });
 
     try {
@@ -45,6 +46,12 @@ export const GET: RequestHandler = async ({ url, setHeaders }) => {
         const limit = limitParam ? parseInt(limitParam, 10) : 0;
         const page = pageParam ? parseInt(pageParam, 10) : 1;
         
+        // Interceptamos la petición de 'inicio' para devolver la lista guardada en la base de datos
+        if (folderFilter === 'inicio') {
+            const sliderImages = await dbApi.getSliderImages();
+            return json({ success: true, images: sliderImages, total: sliderImages.length, page, limit });
+        }
+
         // Escaneo selectivo: Solo leer el directorio solicitado en lugar de escanear todo el disco
         let searchDir = baseDir;
         if (folderFilter) {
@@ -180,6 +187,10 @@ export const PATCH: RequestHandler = async ({ request }) => {
             await dbApi.updateImageOrder(body.order);
             
             return json({ success: true, message: 'Orden guardado con éxito.' });
+        }
+        if (body.sliderImages && Array.isArray(body.sliderImages)) {
+            await dbApi.updateSliderImages(body.sliderImages);
+            return json({ success: true, message: 'Slider actualizado con éxito.' });
         }
         throw error(400, 'Formato de orden inválido.');
     } catch (e: any) {

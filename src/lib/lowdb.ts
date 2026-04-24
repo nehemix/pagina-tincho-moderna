@@ -24,6 +24,7 @@ export interface Session {
 export interface Schema {
     videos: Video[];
     imageOrder: string[];
+    sliderImages: string[];
     users: User[];
     sessions: Session[];
 }
@@ -32,6 +33,7 @@ export interface Schema {
 const defaultData: Schema = {
     videos: [],
     imageOrder: [],
+    sliderImages: [],
     users: [],
     sessions: []
 };
@@ -92,6 +94,20 @@ export const dbApi = {
 
     // --- IMÁGENES ---
 
+    // GET: Obtener las imágenes seleccionadas para el slider
+    getSliderImages: async (): Promise<string[]> => {
+        const db = await getDb();
+        return db.data.sliderImages || [];
+    },
+
+    // UPDATE: Actualizar las imágenes del slider
+    updateSliderImages: async (newSliderImages: string[]): Promise<void> => {
+        const db = await getDb();
+        await db.update((data) => {
+            data.sliderImages = newSliderImages;
+        });
+    },
+
     // GET: Obtener el orden de las imágenes
     getImageOrder: async (): Promise<string[]> => {
         const db = await getDb();
@@ -119,6 +135,9 @@ export const dbApi = {
         const db = await getDb();
         await db.update((data) => {
             data.imageOrder = data.imageOrder.filter(path => !pathsToDelete.includes(path));
+            if (data.sliderImages) {
+                data.sliderImages = data.sliderImages.filter(path => !pathsToDelete.includes(path));
+            }
         });
     },
 
@@ -127,6 +146,9 @@ export const dbApi = {
         const db = await getDb();
         await db.update((data) => {
             data.imageOrder = data.imageOrder.filter(path => !path.includes(folderPattern));
+            if (data.sliderImages) {
+                data.sliderImages = data.sliderImages.filter(path => !path.includes(folderPattern));
+            }
         });
     },
 

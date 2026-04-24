@@ -31,14 +31,25 @@
   let allVideos = $state<{id: string, url: string}[]>([]);
   let videoUrl = $state('');
   let draggedImage = $state<string | null>(null);
+  let sliderImages = $state<string[]>([]);
 
   // Forzamos la carga de imágenes si al iniciar el panel la lista está vacía
   onMount(() => {
-    if (allImages.length === 0) {
-      refreshImages();
-    }
+    // Forzamos el refresco siempre al montar el componente para evadir la caché del navegador
+    refreshImages();
+    refreshSliderImages();
     refreshVideos();
   });
+
+  async function refreshSliderImages() {
+    try {
+      const res = await fetch(`/api/images?folder=inicio&t=${Date.now()}`);
+      if (res.ok) {
+        const data = await res.json();
+        sliderImages = data.images || [];
+      }
+    } catch (err) { console.error(err); }
+  }
 
   // Lógica de Agrupación Dinámica
   function groupImagesByFolder(imagesList: string[], prefix: string = '') {
@@ -60,9 +71,9 @@
       .reduce((acc, key) => { acc[key] = groups[key]; return acc; }, {} as Record<string, string[]>);
   }
 
-  let normalGroups = $derived(groupImagesByFolder(allImages.filter(img => !img.includes('/360/') && !img.includes('/inicio/'))));
+  let normalGroups = $derived(groupImagesByFolder(allImages.filter(img => !img.includes('/360/'))));
   let threeSixtyGroups = $derived(groupImagesByFolder(allImages.filter(img => img.includes('/360/')), '360/'));
-  let inicioImages = $derived(allImages.filter(img => img.includes('/inicio/')));
+  let validSliderImages = $derived(sliderImages.filter(img => allImages.includes(img)));
   let folderOptions = $derived(Object.keys(activeTab === 'normales' ? normalGroups : activeTab === '360' ? threeSixtyGroups : {}).filter(f => f !== 'Raíz'));
 
   function switchTab(tab: 'normales' | '360' | 'videos' | 'inicio') {
@@ -76,7 +87,7 @@
   // Refrescar videos
   async function refreshVideos(showToast = false) {
     try {
-      const res = await fetch('/api/videos');
+      const res = await fetch(`/api/videos?t=${Date.now()}`);
       if (res.ok) {
         const data = await res.json();
         allVideos = data.videos || [];
@@ -90,7 +101,7 @@
   // Función para refrescar la lista de imágenes desde el servidor
   async function refreshImages(showToast = false) {
     try {
-      const res = await fetch('/api/images');
+      const res = await fetch(`/api/images?t=${Date.now()}`);
       if (!res.ok) {
         throw new Error('No se pudo obtener la lista de imágenes.');
       }
@@ -313,6 +324,21 @@
     }
   }
 
+  async function toggleSliderImage(img: string) {
+    let newSlider;
+    if (sliderImages.includes(img)) {
+      newSlider = sliderImages.filter(i => i !== img);
+    } else {
+      newSlider = [...sliderImages, img];
+    }
+    sliderImages = newSlider;
+    await fetch('/api/images', { 
+      method: 'PATCH', 
+      headers: { 'Content-Type': 'application/json' }, 
+      body: JSON.stringify({ sliderImages: newSlider }) 
+    });
+  }
+
   // Drag and Drop (Arrastrar y Soltar)
   function handleDragStart(e: DragEvent, img: string) {
     draggedImage = img;
@@ -329,18 +355,38 @@
       return;
     }
 
-    const fromIndex = allImages.indexOf(draggedImage);
-    const toIndex = allImages.indexOf(targetImg);
+    if (activeTab === 'inicio') {
+      const fromIndex = sliderImages.indexOf(draggedImage);
+      const toIndex = sliderImages.indexOf(targetImg);
+      if (fromIndex > -1 && toIndex > -1) {
+        const newSlider = [...sliderImages];
+        const [moved] = newSlider.splice(fromIndex, 1);
+        newSlider.splice(toIndex, 0, moved);
+        sliderImages = newSlider;
+        fetch('/api/images', { 
+          method: 'PATCH', 
+          headers: { 'Content-Type': 'application/json' }, 
+          body: JSON.stringify({ sliderImages }) 
+        })
+          .catch(err => console.error("Error guardando orden slider:", err));
+      }
+    } else {
+      const fromIndex = allImages.indexOf(draggedImage);
+      const toIndex = allImages.indexOf(targetImg);
 
-    if (fromIndex > -1 && toIndex > -1) {
-      const newImages = [...allImages];
-      const [moved] = newImages.splice(fromIndex, 1);
-      newImages.splice(toIndex, 0, moved);
-      allImages = newImages; // Al actualizar allImages, Svelte re-calcula derivados y gatilla animaciones
-      
-      // Guardamos en segundo plano
-      fetch('/api/images', { method: 'PATCH', body: JSON.stringify({ order: allImages }) })
-        .catch(err => console.error("Error guardando orden:", err));
+      if (fromIndex > -1 && toIndex > -1) {
+        const newImages = [...allImages];
+        const [moved] = newImages.splice(fromIndex, 1);
+        newImages.splice(toIndex, 0, moved);
+        allImages = newImages; 
+        
+        fetch('/api/images', { 
+          method: 'PATCH', 
+          headers: { 'Content-Type': 'application/json' }, 
+          body: JSON.stringify({ order: allImages }) 
+        })
+          .catch(err => console.error("Error guardando orden:", err));
+      }
     }
     draggedImage = null;
   }
@@ -391,9 +437,13 @@
             {isUploading ? 'Procesando...' : 'Agregar Video'}
           </button>
         </form>
+      {:else if activeTab === 'inicio'}
+        <div class="info-panel">
+          <h3>Gestión del Slider Principal</h3>
+          <p>Para añadir imágenes al slider de inicio, ve a las pestañas <b>Imágenes Normales</b> o <b>360°</b> y haz clic en la estrella (⭐) sobre las fotos que desees.<br/>Aquí puedes arrastrar y soltar las imágenes para ordenarlas.</p>
+        </div>
       {:else}
         <form onsubmit={uploadImage} class="upload-form">
-          {#if activeTab !== 'inicio'}
             <div class="input-group">
               <label for="existingFolder">Seleccionar o crear carpeta:</label>
               <select id="existingFolder" bind:value={selectedExistingFolder} class="folder-select">
@@ -410,7 +460,6 @@
                 <input type="text" id="newFolder" bind:value={newFolderName}  required />
               </div>
             {/if}
-          {/if}
           
           <div class="input-group drop-zone {isDraggingOver ? 'dragging' : ''}"
                ondragover={(e) => { e.preventDefault(); isDraggingOver = true; }}
@@ -458,6 +507,9 @@
       {#if selectedImages.includes(img)}
         <div class="checkmark">✓</div>
       {/if}
+      <button type="button" class="btn-star {sliderImages.includes(img) ? 'active' : ''}" onclick={(e) => { e.stopPropagation(); toggleSliderImage(img); }} title={sliderImages.includes(img) ? 'Quitar del Slider' : 'Agregar al Slider'}>
+        {sliderImages.includes(img) ? '⭐' : '☆'}
+      </button>
       <div class="image-overlay">
         <p class="img-path">{img.split('/').pop()}</p>
       </div>
@@ -510,8 +562,11 @@
         {@render folderAccordion(folderName, images, false)}
       {/each}
     {:else if activeTab === 'inicio'}
-      <div class="admin-gallery">
-        {#each inicioImages as img (img)}
+      {#if validSliderImages.length === 0}
+        <p style="text-align: center; color: #888; margin-top: 2rem;">No hay imágenes seleccionadas para el slider. Ve a "Imágenes Normales" y selecciona tus favoritas (⭐).</p>
+      {:else}
+        <div class="admin-gallery">
+          {#each validSliderImages as img (img)}
           <div
             animate:flip={{duration: 300}}
             draggable="true"
@@ -525,8 +580,9 @@
           >
             {@render imageCardInner(img)}
           </div>
-        {/each}
-      </div>
+          {/each}
+        </div>
+      {/if}
     {:else if activeTab === 'videos'}
       <div class="admin-gallery">
         {#each allVideos as video (video.id)}
@@ -638,6 +694,14 @@
   .img-path { color: #ccc; font-size: 0.8rem; text-align: center; margin-bottom: 15px; word-break: break-all; }
   .btn-delete { background: #d32f2f; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }
   .btn-delete:hover { background: #b71c1c; }
+
+  .btn-star { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.5); border: none; color: white; font-size: 1.2rem; cursor: pointer; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; z-index: 10; transition: transform 0.2s, background 0.2s; }
+  .btn-star:hover { transform: scale(1.1); background: rgba(0,0,0,0.8); }
+  .btn-star.active { color: gold; background: rgba(0,0,0,0.8); }
+  
+  .info-panel { background: #222; border-left: 4px solid var(--primary-green); padding: 20px; border-radius: 6px; width: 100%;}
+  .info-panel h3 { margin-top: 0; margin-bottom: 10px; color: white; }
+  .info-panel p { color: #ccc; margin-bottom: 0; line-height: 1.5; }
 
   /* Estilos del Modal */
   .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); display: flex; justify-content: center; align-items: center; z-index: 1000; }

@@ -98,12 +98,10 @@
 	.brand {
 		text-decoration: none;
 		font-size: 2rem;
-		font-weight: 800;
-		letter-spacing: 1px;
-		font-family: 'Encode Sans Condensed', sans-serif;
-		font-weight: 700;
+		font-family: 'Anton', sans-serif;
+		font-weight: 400;
 		font-style: normal;
-		letter-spacing: -1px; /* Para que quede más compacto, como en la imagen */
+		letter-spacing: 1px;
 		text-transform: uppercase;
 		display: flex;
 		flex-wrap: nowrap;

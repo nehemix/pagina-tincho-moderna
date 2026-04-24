@@ -4,6 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: pagina-tincho-app
+    init: true
     restart: unless-stopped
     ports:
       - "3000:3000"
@@ -12,7 +13,7 @@ services:
       - HOST=0.0.0.0
       # SvelteKit puede bloquear envíos de formularios por protección CSRF. 
       # Si experimentas errores 403 al hacer login, descomenta la siguiente línea y pon tu dominio real o IP:
-      - ORIGIN=https://martinmangudo.duckdns.org
+      - ORIGIN=http://localhost:3000
       # Dile a SvelteKit que lea el protocolo real que le pasa Nginx (HTTPS)
       - PROTOCOL_HEADER=x-forwarded-proto
     # Seguridad: Evita que el contenedor o sus hijos obtengan nuevos privilegios

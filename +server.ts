@@ -1,5 +1,4 @@
-import { error } from '@sveltejs/kit';
-import type { RequestHandler } from './$types';
+import { error, type RequestHandler } from '@sveltejs/kit';
 import fs from 'fs/promises';
 import path from 'path';
 

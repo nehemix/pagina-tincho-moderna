@@ -23,7 +23,7 @@ services:
     cap_drop:
       - ALL
     # Fuerza la ejecución como usuario sin privilegios (UID 1000)
-    user: "1000:1000"
+    # user: "1000:1000" # <-- Comentado para evitar problemas de permisos en local
     volumes:
       # Persistencia para la base de datos (LowDB) y las imágenes subidas
       - ./data:/app/data

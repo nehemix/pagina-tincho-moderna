@@ -13,7 +13,7 @@ services:
       - HOST=0.0.0.0
       # SvelteKit puede bloquear envíos de formularios por protección CSRF. 
       # Si experimentas errores 403 al hacer login, descomenta la siguiente línea y pon tu dominio real o IP:
-      - ORIGIN=http://localhost:3000
+      - ORIGIN=https://martinmangudo.duckdns.org
       # Dile a SvelteKit que lea el protocolo real que le pasa Nginx (HTTPS)
       - PROTOCOL_HEADER=x-forwarded-proto
     # Seguridad: Evita que el contenedor o sus hijos obtengan nuevos privilegios
@@ -23,7 +23,7 @@ services:
     cap_drop:
       - ALL
     # Fuerza la ejecución como usuario sin privilegios (UID 1000)
-    # user: "1000:1000" # <-- Comentado para evitar problemas de permisos en local
+    user: "1000:1000"
     volumes:
       # Persistencia para la base de datos (LowDB) y las imágenes subidas
       - ./data:/app/data

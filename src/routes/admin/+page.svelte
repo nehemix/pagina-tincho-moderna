@@ -36,6 +36,10 @@
   let selectedFolders = $state<string[]>([]);
   let folderOrder = $state<string[]>([]);
   let sliderImages = $state<string[]>([]);
+  
+  let showConfirmModal = $state(false);
+  let confirmMessage = $state('');
+  let confirmAction = $state<(() => void) | null>(null);
 
   // Forzamos la carga de imágenes si al iniciar el panel la lista está vacía
   onMount(() => {
@@ -129,6 +133,12 @@
         toast.error(`Error al refrescar: ${err.message}`);
       }
     }
+  }
+
+  function requestConfirm(message: string, action: () => void) {
+    confirmMessage = message;
+    confirmAction = action;
+    showConfirmModal = true;
   }
 
   // Manejador Drag & Drop
@@ -256,42 +266,43 @@
     }
   }
 
-  async function deleteVideo(id: string) {
-    if (!confirm('¿Seguro que deseas eliminar este video?')) return;
-    const res = await fetch('/api/videos', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id })
+  function deleteVideo(id: string) {
+    requestConfirm('¿Seguro que deseas eliminar este video?', async () => {
+      const res = await fetch('/api/videos', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(data.message);
+        await refreshVideos();
+      } else {
+        toast.error(`Error al borrar: ${data.error}`);
+      }
     });
-    const data = await res.json();
-    if (data.success) {
-      toast.success(data.message);
-      await refreshVideos();
-    } else {
-      toast.error(`Error al borrar: ${data.error}`);
-    }
   }
 
   // Gestión Estructural de Carpetas (Múltiple)
-  async function deleteSelectedFolders() {
+  function deleteSelectedFolders() {
     const is360 = activeTab === '360';
-    if (!confirm(`¿Eliminar ${selectedFolders.length} carpeta(s) y TODAS sus imágenes? Esta acción NO se puede deshacer.`)) return;
-    
-    let allSuccess = true;
-    for (const folderName of selectedFolders) {
-      const folderPath = is360 ? `360/${folderName}` : folderName;
-      const res = await fetch('/api/images', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ folderPath }) });
-      const data = await res.json();
-      if (!data.success) {
-        toast.error(`Error eliminando ${folderName}: ${data.error}`);
-        allSuccess = false;
+    requestConfirm(`¿Eliminar ${selectedFolders.length} carpeta(s) y TODAS sus imágenes? Esta acción NO se puede deshacer.`, async () => {
+      let allSuccess = true;
+      for (const folderName of selectedFolders) {
+        const folderPath = is360 ? `360/${folderName}` : folderName;
+        const res = await fetch('/api/images', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ folderPath }) });
+        const data = await res.json();
+        if (!data.success) {
+          toast.error(`Error eliminando ${folderName}: ${data.error}`);
+          allSuccess = false;
+        }
       }
-    }
-    
-    if (allSuccess) toast.success('Carpetas eliminadas con éxito.');
-    selectedImages = [];
-    selectedFolders = [];
-    await refreshImages();
+      
+      if (allSuccess) toast.success('Carpetas eliminadas con éxito.');
+      selectedImages = [];
+      selectedFolders = [];
+      await refreshImages();
+    });
   }
 
   async function renameFolder(oldName: string) {
@@ -327,24 +338,24 @@
     }
   }
 
-  async function deleteSelectedImages() {
+  function deleteSelectedImages() {
     if (selectedImages.length === 0) return;
-    if (!confirm(`¿Eliminar ${selectedImages.length} imagen(es) de forma permanente?`)) return;
-
-    const res = await fetch('/api/images', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ imagePaths: selectedImages })
+    requestConfirm(`¿Eliminar ${selectedImages.length} imagen(es) de forma permanente?`, async () => {
+      const res = await fetch('/api/images', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imagePaths: selectedImages })
+      });
+      
+      const data = await res.json();
+      if (data.success) {
+        toast.success(data.message || 'Imágenes eliminadas.');
+        selectedImages = []; // Resetea la selección
+        await refreshImages();
+      } else {
+        toast.error(`Error al borrar: ${data.error}`);
+      }
     });
-    
-    const data = await res.json();
-    if (data.success) {
-      toast.success(data.message || 'Imágenes eliminadas.');
-      selectedImages = []; // Resetea la selección
-      await refreshImages();
-    } else {
-      toast.error(`Error al borrar: ${data.error}`);
-    }
   }
 
   async function toggleSliderImage(img: string) {
@@ -756,6 +767,22 @@
         </div>
       </div>
     {/if}
+
+    <!-- Modal de Confirmación -->
+    {#if showConfirmModal}
+      <!-- svelte-ignore a11y_click_events_have_key_events -->
+      <!-- svelte-ignore a11y_no_static_element_interactions -->
+      <div class="modal-backdrop" onclick={() => showConfirmModal = false} transition:fade={{duration: 200}}>
+        <div class="modal-content confirm-modal" onclick={(e) => e.stopPropagation()} transition:scale={{duration: 300, start: 0.95}}>
+          <h2>Confirmar Acción</h2>
+          <p>{confirmMessage}</p>
+          <div class="modal-actions">
+            <button class="btn-cancel-modal" onclick={() => showConfirmModal = false}>Cancelar</button>
+            <button class="btn-delete confirm-btn" onclick={() => { if (confirmAction) confirmAction(); showConfirmModal = false; }}>Confirmar y Borrar</button>
+          </div>
+        </div>
+      </div>
+    {/if}
   </div>
 {/if}
 
@@ -875,6 +902,12 @@
   .btn-close { background: none; border: none; color: #aaa; font-size: 1.5rem; cursor: pointer; transition: color 0.2s; padding: 0 10px; }
   .btn-close:hover { color: white; }
   .folder-content { flex: 1; overflow-y: auto; padding: 20px; }
+
+  /* Modal de Confirmación */
+  .confirm-modal { max-width: 400px; }
+  .confirm-modal p { color: #ccc; margin-bottom: 25px; line-height: 1.5; font-size: 1.1rem; }
+  .modal-actions { display: flex; gap: 15px; justify-content: center; }
+  .confirm-btn { padding: 10px 30px; font-size: 1rem; border-radius: 6px; }
 
   @media (max-width: 600px) {
     .modal-options { flex-direction: column; }

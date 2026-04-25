@@ -18,10 +18,10 @@
 
 	const navLinks = [
 		{ href: '/producto', label: 'Producto' },
+		{ href: '/foto-360', label: 'Foto 360' },
 		{ href: '/industria', label: 'Industria' },
 		{ href: '/retratos', label: 'Retratos' },
 		{ href: '/personales', label: 'Personales' },
-		{ href: '/foto-360', label: 'Foto 360' },
 		{ href: '/videos', label: 'Videos' },
 		{ href: '/contacto', label: 'Contacto' }
 	];

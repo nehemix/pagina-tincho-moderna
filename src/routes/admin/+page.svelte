@@ -20,7 +20,7 @@
   let isUploading = $state(false);
   let selectedExistingFolder = $state('__NEW__'); // Selector de carpetas, por defecto Nueva Carpeta
   let newFolderName = $state(''); // Nombre para nueva carpeta
-  let expandedFolders = $state<Record<string, boolean>>({}); // Control de los acordeones
+  let activeModalFolder = $state<string | null>(null); // Control para la carpeta abierta en el modal
   let isDraggingOver = $state(false); // Estado visual para el Drag & Drop
   let fileInputFiles = $state<HTMLInputElement | null>(null);
   let fileInputFolder = $state<HTMLInputElement | null>(null);
@@ -93,6 +93,7 @@
     newFolderName = '';
     pendingFiles = [];
     selectedFolders = [];
+    activeModalFolder = null;
   }
 
   // Refrescar videos
@@ -210,8 +211,8 @@
         selectedExistingFolder = '__NEW__';
         newFolderName = '';
         
-        // Expandir la carpeta automáticamente tras subir
-        if (targetFolder) expandedFolders[targetFolder.replace('360/', '')] = true;
+        // Abrir la carpeta automáticamente tras subir
+        if (targetFolder) activeModalFolder = targetFolder.replace('360/', '');
         toast.success(data.message || 'Imágenes subidas con éxito!');
       } else {
         toast.error(`Error al subir: ${data.error}`);
@@ -306,7 +307,7 @@
     
     if (data.success) {
       toast.success(data.message);
-      expandedFolders[newName.trim()] = expandedFolders[oldName]; // Mantiene el estado de apertura
+      if (activeModalFolder === oldName) activeModalFolder = newName.trim();
       if (selectedFolders.includes(oldName)) {
         selectedFolders = selectedFolders.filter(f => f !== oldName);
         selectedFolders.push(newName.trim());
@@ -622,50 +623,34 @@
              ondragstart={(e) => handleFolderDragStart(e, folderName)}
              ondrop={(e) => handleFolderDrop(e, folderName)}
              ondragover={(e) => e.preventDefault()}
-             onclick={() => expandedFolders[folderName] = !expandedFolders[folderName]} role="button" tabindex="0" onkeydown={(e) => e.key === 'Enter' && (expandedFolders[folderName] = !expandedFolders[folderName])}>
-          <div class="folder-info">
-            <div class="drag-handle" title="Arrastrar para ordenar" onclick={(e) => e.stopPropagation()} role="presentation" onkeydown={(e) => e.stopPropagation()}>☰</div>
-            {#if folderName !== 'Raíz'}
-              <input type="checkbox" checked={selectedFolders.includes(folderName)} 
-                     onclick={(e) => { 
-                       e.stopPropagation(); 
-                       if (selectedFolders.includes(folderName)) {
-                         selectedFolders = selectedFolders.filter(f => f !== folderName);
-                       } else {
-                         selectedFolders = [...selectedFolders, folderName];
-                       }
-                     }}
-                     style="cursor: pointer; width: 16px; height: 16px; margin: 0 5px;" title="Seleccionar carpeta" />
-            {/if}
-            <span class="folder-icon">{expandedFolders[folderName] ? '📂' : '📁'}</span>
-            <h3>{folderName}</h3>
-            <span class="image-count">({images.length} imgs)</span>
-          </div>
-          <div class="folder-actions" onclick={(e) => e.stopPropagation()} role="presentation" onkeydown={(e) => e.stopPropagation()}>
-            <span class="chevron" style="transform: {expandedFolders[folderName] ? 'rotate(180deg)' : 'rotate(0)'}">▼</span>
-          </div>
-        </div>
-        {#if expandedFolders[folderName]}
-          <div class="folder-content" transition:slide={{ duration: 300 }}>
-            <div class="admin-gallery">
-              {#each images as img (img)}
-                <div
-                  animate:flip={{duration: 300}}
-                  draggable="true"
-                  ondragstart={(e) => handleDragStart(e, img)}
-                  ondragover={(e) => e.preventDefault()}
-                  ondrop={(e) => handleDropImage(e, img)}
-                  class="image-card {selectedImages.includes(img) ? 'selected' : ''} {draggedImage === img ? 'dragging' : ''}"
-                  onclick={() => toggleSelection(img)}
-                  onkeydown={(e) => e.key === 'Enter' && toggleSelection(img)}
-                  role="button" tabindex="0" aria-label="Seleccionar imagen"
-                >
-                  {@render imageCardInner(img)}
-                </div>
-              {/each}
+             onclick={() => activeModalFolder = folderName} role="button" tabindex="0" onkeydown={(e) => e.key === 'Enter' && (activeModalFolder = folderName)}>
+          
+          <div class="folder-header-main">
+            <div class="folder-controls">
+              <div class="drag-handle" title="Arrastrar para ordenar" onclick={(e) => e.stopPropagation()} role="presentation" onkeydown={(e) => e.stopPropagation()}>☰</div>
+              {#if folderName !== 'Raíz'}
+                <input type="checkbox" checked={selectedFolders.includes(folderName)} 
+                       onclick={(e) => { 
+                         e.stopPropagation(); 
+                         if (selectedFolders.includes(folderName)) {
+                           selectedFolders = selectedFolders.filter(f => f !== folderName);
+                         } else {
+                           selectedFolders = [...selectedFolders, folderName];
+                         }
+                       }}
+                       style="cursor: pointer; width: 16px; height: 16px;" title="Seleccionar carpeta" />
+              {/if}
+            </div>
+
+            <div class="folder-info">
+              <span class="folder-icon">📁</span>
+              <div class="folder-text">
+                <h3>{folderName}</h3>
+                <span class="image-count">({images.length} imgs)</span>
+              </div>
             </div>
           </div>
-        {/if}
+        </div>
       </div>
     {/snippet}
 
@@ -745,6 +730,32 @@
         </div>
       </div>
     {/if}
+
+    <!-- Modal de Galería de Carpeta -->
+    {#if activeModalFolder}
+      <!-- svelte-ignore a11y_click_events_have_key_events -->
+      <!-- svelte-ignore a11y_no_static_element_interactions -->
+      <div class="modal-backdrop" onclick={() => activeModalFolder = null} transition:fade={{duration: 200}}>
+        <div class="modal-content gallery-modal" onclick={(e) => e.stopPropagation()} transition:scale={{duration: 300, start: 0.95}}>
+          <div class="modal-header">
+            <h2>Carpeta: {activeModalFolder}</h2>
+            <button class="btn-close" onclick={() => activeModalFolder = null}>✖</button>
+          </div>
+          <div class="folder-content">
+            <div class="admin-gallery" style="grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px;">
+              {#each (activeTab === 'normales' ? normalGroups[activeModalFolder] : threeSixtyGroups[activeModalFolder]) || [] as img (img)}
+                <div animate:flip={{duration: 300}} draggable="true"
+                     ondragstart={(e) => handleDragStart(e, img)} ondragover={(e) => e.preventDefault()} ondrop={(e) => handleDropImage(e, img)}
+                     class="image-card {selectedImages.includes(img) ? 'selected' : ''} {draggedImage === img ? 'dragging' : ''}"
+                     onclick={() => toggleSelection(img)} onkeydown={(e) => e.key === 'Enter' && toggleSelection(img)} role="button" tabindex="0" aria-label="Seleccionar imagen">
+                  {@render imageCardInner(img)}
+                </div>
+              {/each}
+            </div>
+          </div>
+        </div>
+      </div>
+    {/if}
   </div>
 {/if}
 
@@ -793,22 +804,35 @@
 
   .gallery-title { border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
   
-  .folders-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 400px), 1fr)); gap: 20px; align-items: start; margin-bottom: 20px; }
-  .folder-container { background: #1a1a1a; border-radius: 8px; overflow: hidden; border: 1px solid #333; transition: transform 0.2s; }
+  .folders-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); gap: 20px; align-items: start; margin-bottom: 20px; }
+  
+  .folder-container { background: #1a1a1a; border-radius: 8px; overflow: hidden; border: 1px solid #333; transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s; position: relative; aspect-ratio: 1;}
+  .folder-container:hover { transform: translateY(-4px); box-shadow: 0 8px 16px rgba(0,0,0,0.4); border-color: #555; }
   .folder-container.dragging-folder { opacity: 0.5; border: 2px dashed var(--primary-green); }
-  .folder-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; cursor: pointer; background: #222; transition: background 0.2s; user-select: none; }
+
+  .folder-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; cursor: pointer; background: #222; transition: background 0.2s; user-select: none; height: 100%; box-sizing: border-box; }
   .folder-header.selected { background: #243324; border-left: 4px solid var(--primary-green); padding-left: 16px; }
   .folder-header:hover { background: #2a2a2a; }
-  .folder-info { display: flex; align-items: center; gap: 10px; }
+  
+  .folder-header-main { display: flex; align-items: center; flex-direction: column; justify-content: center; width: 100%; height: 100%; gap: 10px; }
+
+  .folder-controls { display: flex; align-items: center; gap: 10px; position: absolute; top: 15px; left: 15px; right: 15px; justify-content: space-between; width: calc(100% - 30px); pointer-events: none; }
+  .drag-handle, .folder-controls input { pointer-events: auto; }
+
+  .folder-info { display: flex; align-items: center; gap: 5px; flex-direction: column; text-align: center; }
+
+  .folder-icon { font-size: 4rem; margin-bottom: 5px; transition: transform 0.2s; }
+  .folder-container:hover .folder-icon { transform: scale(1.05); }
+
+  .folder-text { display: flex; align-items: center; gap: 2px; flex-direction: column; }
+
+  .folder-text h3 { margin: 0; font-size: 1.2rem; color: #fff; text-transform: capitalize; }
+
+  .image-count { color: #888; font-size: 0.9rem; }
+
   .drag-handle { cursor: grab; font-size: 1.2rem; color: #888; display: flex; align-items: center; justify-content: center; padding: 0 5px; }
   .drag-handle:hover { color: white; }
   .drag-handle:active { cursor: grabbing; }
-  .folder-info h3 { margin: 0; font-size: 1.1rem; color: #fff; text-transform: capitalize;}
-  .image-count { color: #888; font-size: 0.9rem; }
-  .folder-actions { display: flex; align-items: center; gap: 10px; }
-  .chevron { margin-left: 10px; color: #888; font-size: 0.9rem; transition: transform 0.3s ease; display: inline-block; }
-  .folder-content { padding: 20px; border-top: 1px solid #333; }
-  .folder-content .admin-gallery { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
   
   .admin-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
   .image-card { position: relative; border-radius: 8px; overflow: hidden; aspect-ratio: 1; background: #111; cursor: pointer; transition: transform 0.2s, border 0.2s; border: 2px solid transparent; }
@@ -843,6 +867,14 @@
   .modal-card p { margin: 0; font-size: 0.85rem; color: #aaa; }
   .btn-cancel-modal { background: transparent; color: #ccc; border: 1px solid #555; padding: 10px 30px; border-radius: 6px; cursor: pointer; transition: all 0.2s; font-size: 1rem; width: 100%; }
   .btn-cancel-modal:hover { background: #444; color: white; }
+
+  /* Modal de galería de la carpeta */
+  .gallery-modal { max-width: 1000px; width: 95%; max-height: 90vh; padding: 0; overflow: hidden; display: flex; flex-direction: column; background: #1a1a1a; }
+  .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px; border-bottom: 1px solid #333; background: #222; }
+  .modal-header h2 { margin: 0; font-size: 1.5rem; text-transform: capitalize; color: white; }
+  .btn-close { background: none; border: none; color: #aaa; font-size: 1.5rem; cursor: pointer; transition: color 0.2s; padding: 0 10px; }
+  .btn-close:hover { color: white; }
+  .folder-content { flex: 1; overflow-y: auto; padding: 20px; }
 
   @media (max-width: 600px) {
     .modal-options { flex-direction: column; }

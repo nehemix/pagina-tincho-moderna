@@ -12,8 +12,8 @@ services:
       - NODE_ENV=production
       - HOST=0.0.0.0
       # SvelteKit puede bloquear envíos de formularios por protección CSRF. 
-      # Si experimentas errores 403 al hacer login, descomenta la siguiente línea y pon tu dominio real o IP:
-      - ORIGIN=https://martinmangudo.duckdns.org
+      # Configura esto con la URL exacta desde donde pruebas (ej. http://localhost:3000 en local o tu dominio en prod)
+      - ORIGIN=http://localhost:3000
       # Dile a SvelteKit que lea el protocolo real que le pasa Nginx (HTTPS)
       - PROTOCOL_HEADER=x-forwarded-proto
     # Seguridad: Evita que el contenedor o sus hijos obtengan nuevos privilegios

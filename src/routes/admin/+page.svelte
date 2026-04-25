@@ -27,6 +27,7 @@
   let pendingFiles = $state<File[]>([]);
   let showUploadModal = $state(false);
   let selectedImages = $state<string[]>([]);
+  let selectedVideos = $state<string[]>([]);
   
   let allVideos = $state<{id: string, url: string}[]>([]);
   let videoUrl = $state('');
@@ -93,6 +94,7 @@
   function switchTab(tab: 'normales' | '360' | 'videos' | 'inicio') {
     activeTab = tab;
     selectedImages = []; // Limpia la selección al cambiar de pestaña
+    selectedVideos = [];
     selectedExistingFolder = '__NEW__'; 
     newFolderName = '';
     pendingFiles = [];
@@ -266,20 +268,33 @@
     }
   }
 
-  function deleteVideo(id: string) {
-    requestConfirm('¿Seguro que deseas eliminar este video?', async () => {
-      const res = await fetch('/api/videos', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id })
-      });
-      const data = await res.json();
-      if (data.success) {
-        toast.success(data.message);
-        await refreshVideos();
-      } else {
-        toast.error(`Error al borrar: ${data.error}`);
+  function toggleVideoSelection(id: string) {
+    if (selectedVideos.includes(id)) {
+      selectedVideos = selectedVideos.filter(v => v !== id);
+    } else {
+      selectedVideos = [...selectedVideos, id];
+    }
+  }
+
+  function deleteSelectedVideos() {
+    if (selectedVideos.length === 0) return;
+    requestConfirm(`¿Seguro que deseas eliminar ${selectedVideos.length} video(s)?`, async () => {
+      let allSuccess = true;
+      for (const id of selectedVideos) {
+        const res = await fetch('/api/videos', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
+        const data = await res.json();
+        if (!data.success) {
+          toast.error(`Error al borrar video ${id}: ${data.error}`);
+          allSuccess = false;
+        }
       }
+      if (allSuccess) toast.success('Videos eliminados con éxito.');
+      selectedVideos = [];
+      await refreshVideos();
     });
   }
 
@@ -600,6 +615,14 @@
       </div>
     {/if}
     
+    {#if selectedVideos.length > 0}
+      <div class="selection-panel">
+        <span>{selectedVideos.length} video(s) seleccionado(s)</span>
+        <button class="btn-delete" onclick={deleteSelectedVideos}>🗑️ Borrar Seleccionados</button>
+        <button class="btn-cancel" onclick={() => selectedVideos = []}>Cancelar</button>
+      </div>
+    {/if}
+
     <!-- Panel de acciones de carpeta -->
     {#if selectedFolders.length > 0 && (activeTab === 'normales' || activeTab === '360')}
       <div class="selection-panel folder-selection">
@@ -684,10 +707,7 @@
             ondragstart={(e) => handleDragStart(e, img)}
             ondragover={(e) => e.preventDefault()}
             ondrop={(e) => handleDropImage(e, img)}
-            class="image-card {selectedImages.includes(img) ? 'selected' : ''} {draggedImage === img ? 'dragging' : ''}"
-            onclick={() => toggleSelection(img)}
-            onkeydown={(e) => e.key === 'Enter' && toggleSelection(img)}
-            role="button" tabindex="0" aria-label="Seleccionar imagen"
+            class="image-card {draggedImage === img ? 'dragging' : ''}"
           >
             {@render imageCardInner(img)}
           </div>
@@ -697,15 +717,21 @@
     {:else if activeTab === 'videos'}
       <div class="admin-gallery">
         {#each allVideos as video (video.id)}
-          <div class="image-card {draggedVideo === video.id ? 'dragging' : ''}" 
+          <div class="image-card {selectedVideos.includes(video.id) ? 'selected' : ''} {draggedVideo === video.id ? 'dragging' : ''}" 
                draggable="true"
                ondragstart={(e) => handleVideoDragStart(e, video.id)}
                ondragover={(e) => e.preventDefault()}
                ondrop={(e) => handleVideoDrop(e, video.id)}
+               onclick={() => toggleVideoSelection(video.id)}
+               onkeydown={(e) => e.key === 'Enter' && toggleVideoSelection(video.id)}
+               role="button" tabindex="0" aria-label="Seleccionar video"
                style="border: 1px solid #444;">
             <img src={`https://img.youtube.com/vi/${video.id}/hqdefault.jpg`} alt="Video Miniatura" draggable="false" loading="lazy" />
-            <div class="image-overlay" style="opacity: 1; background: transparent; justify-content: flex-end; padding-bottom: 10px;">
-              <button type="button" class="btn-delete" style="box-shadow: 0 4px 6px rgba(0,0,0,0.8);" onclick={() => deleteVideo(video.id)}>🗑️ Borrar</button>
+            {#if selectedVideos.includes(video.id)}
+              <div class="checkmark">✓</div>
+            {/if}
+            <div class="image-overlay">
+              <p class="img-path">YouTube ID: {video.id}</p>
             </div>
           </div>
         {/each}

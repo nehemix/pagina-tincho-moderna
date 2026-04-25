@@ -7,7 +7,7 @@ export const load: PageLoad = async ({ fetch }) => {
             const errorText = await res.text();
             throw new Error(`La respuesta del servidor no fue OK (${res.status}): ${errorText}`);
         }
-        const { images } = await res.json();
+        const { images, folderOrder } = await res.json();
         
         // Filtramos las imágenes que pertenecen a la carpeta 360
         const threeSixtyImages = images.filter((img: string) => img.includes('/images/360/'));
@@ -51,6 +51,16 @@ export const load: PageLoad = async ({ fetch }) => {
                 return a.localeCompare(b);
             });
             return spin;
+        });
+
+        // Ordenamos las carpetas de los fotogramas (spins) según la DB
+        activeSpins.sort((a, b) => {
+            const idxA = folderOrder ? folderOrder.indexOf(a.id) : -1;
+            const idxB = folderOrder ? folderOrder.indexOf(b.id) : -1;
+            if (idxA === -1 && idxB === -1) return a.id.localeCompare(b.id);
+            if (idxA === -1) return 1;
+            if (idxB === -1) return -1;
+            return idxA - idxB;
         });
 
         return { spins: activeSpins };

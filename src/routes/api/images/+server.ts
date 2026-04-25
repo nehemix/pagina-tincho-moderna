@@ -78,6 +78,7 @@ export const GET: RequestHandler = async ({ url, setHeaders }) => {
 
         // Obtener orden desde lowdb
         const order = await dbApi.getImageOrder();
+        const folderOrder = await dbApi.getFolderOrder();
         
         if (order.length > 0) {
             images.sort((a, b) => {
@@ -98,7 +99,7 @@ export const GET: RequestHandler = async ({ url, setHeaders }) => {
             images = images.slice(startIndex, startIndex + limit);
         }
 
-        return json({ success: true, images, total, page, limit });
+        return json({ success: true, images, folderOrder, total, page, limit });
     } catch (e: any) {
         console.error("Error al leer el directorio de imágenes:", e);
         return json({ success: false, error: 'No se pudo leer el directorio de imágenes.' }, { status: 500 });
@@ -191,6 +192,10 @@ export const PATCH: RequestHandler = async ({ request }) => {
         if (body.sliderImages && Array.isArray(body.sliderImages)) {
             await dbApi.updateSliderImages(body.sliderImages);
             return json({ success: true, message: 'Slider actualizado con éxito.' });
+        }
+        if (body.folderOrder && Array.isArray(body.folderOrder)) {
+            await dbApi.updateFolderOrder(body.folderOrder);
+            return json({ success: true, message: 'Orden de carpetas actualizado con éxito.' });
         }
         throw error(400, 'Formato de orden inválido.');
     } catch (e: any) {

@@ -24,6 +24,7 @@ export interface Session {
 export interface Schema {
     videos: Video[];
     imageOrder: string[];
+    folderOrder: string[];
     sliderImages: string[];
     users: User[];
     sessions: Session[];
@@ -33,6 +34,7 @@ export interface Schema {
 const defaultData: Schema = {
     videos: [],
     imageOrder: [],
+    folderOrder: [],
     sliderImages: [],
     users: [],
     sessions: []
@@ -122,6 +124,20 @@ export const dbApi = {
         });
     },
 
+    // GET: Obtener el orden de las carpetas
+    getFolderOrder: async (): Promise<string[]> => {
+        const db = await getDb();
+        return db.data.folderOrder || [];
+    },
+
+    // UPDATE: Reemplazar todo el orden de las carpetas
+    updateFolderOrder: async (newOrder: string[]): Promise<void> => {
+        const db = await getDb();
+        await db.update((data) => {
+            data.folderOrder = newOrder;
+        });
+    },
+
     // UPDATE: Renombrar carpeta en las rutas de las imágenes guardadas
     renameImageFolderInOrder: async (oldPattern: string, newPattern: string): Promise<void> => {
         const db = await getDb();
@@ -202,5 +218,13 @@ export const dbApi = {
     getUserById: async (id: string): Promise<User | undefined> => {
         const db = await getDb();
         return (db.data.users || []).find(u => u.id === id);
+    },
+
+    // UPDATE: Reemplazar todo el orden de los videos
+    updateVideosOrder: async (newVideos: Video[]): Promise<void> => {
+        const db = await getDb();
+        await db.update((data) => {
+            data.videos = newVideos;
+        });
     }
 };

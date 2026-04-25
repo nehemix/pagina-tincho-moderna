@@ -31,6 +31,10 @@
   let allVideos = $state<{id: string, url: string}[]>([]);
   let videoUrl = $state('');
   let draggedImage = $state<string | null>(null);
+  let draggedFolder = $state<string | null>(null);
+  let draggedVideo = $state<string | null>(null);
+  let selectedFolders = $state<string[]>([]);
+  let folderOrder = $state<string[]>([]);
   let sliderImages = $state<string[]>([]);
 
   // Forzamos la carga de imágenes si al iniciar el panel la lista está vacía
@@ -65,9 +69,15 @@
       if (!groups[folder]) groups[folder] = [];
       groups[folder].push(img);
     }
-    // Ordenamos de forma descendente (la última arriba) y natural los nombres de las carpetas
     return Object.keys(groups)
-      .sort((a, b) => b.localeCompare(a, undefined, { numeric: true, sensitivity: 'base' }))
+      .sort((a, b) => {
+        const idxA = folderOrder.indexOf(a);
+        const idxB = folderOrder.indexOf(b);
+        if (idxA === -1 && idxB === -1) return b.localeCompare(a, undefined, { numeric: true, sensitivity: 'base' });
+        if (idxA === -1) return 1; // Las nuevas al final
+        if (idxB === -1) return -1;
+        return idxA - idxB;
+      })
       .reduce((acc, key) => { acc[key] = groups[key]; return acc; }, {} as Record<string, string[]>);
   }
 
@@ -82,6 +92,7 @@
     selectedExistingFolder = '__NEW__'; 
     newFolderName = '';
     pendingFiles = [];
+    selectedFolders = [];
   }
 
   // Refrescar videos
@@ -105,8 +116,9 @@
       if (!res.ok) {
         throw new Error('No se pudo obtener la lista de imágenes.');
       }
-      const { images } = await res.json();
+      const { images, folderOrder: fetchedFolderOrder } = await res.json();
       allImages = images;
+      if (fetchedFolderOrder) folderOrder = fetchedFolderOrder;
       if (showToast) {
         toast.success('Lista de imágenes actualizada.');
       }
@@ -259,24 +271,30 @@
     }
   }
 
-  // Gestión Estructural de Carpetas
-  async function deleteFolder(folderName: string, is360: boolean) {
-    if (!confirm(`¿Eliminar la carpeta "${folderName}" y TODAS sus imágenes? Esta acción NO se puede deshacer.`)) return;
+  // Gestión Estructural de Carpetas (Múltiple)
+  async function deleteSelectedFolders() {
+    const is360 = activeTab === '360';
+    if (!confirm(`¿Eliminar ${selectedFolders.length} carpeta(s) y TODAS sus imágenes? Esta acción NO se puede deshacer.`)) return;
     
-    const folderPath = is360 ? `360/${folderName}` : folderName;
-    const res = await fetch('/api/images', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ folderPath }) });
-    const data = await res.json();
-    
-    if (data.success) {
-      toast.success(data.message);
-      selectedImages = [];
-      await refreshImages();
-    } else {
-      toast.error(`Error: ${data.error}`);
+    let allSuccess = true;
+    for (const folderName of selectedFolders) {
+      const folderPath = is360 ? `360/${folderName}` : folderName;
+      const res = await fetch('/api/images', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ folderPath }) });
+      const data = await res.json();
+      if (!data.success) {
+        toast.error(`Error eliminando ${folderName}: ${data.error}`);
+        allSuccess = false;
+      }
     }
+    
+    if (allSuccess) toast.success('Carpetas eliminadas con éxito.');
+    selectedImages = [];
+    selectedFolders = [];
+    await refreshImages();
   }
 
-  async function renameFolder(oldName: string, is360: boolean) {
+  async function renameFolder(oldName: string) {
+    const is360 = activeTab === '360';
     const newName = prompt(`Nuevo nombre para "${oldName}":`, oldName);
     if (!newName || newName.trim() === '' || newName === oldName) return;
 
@@ -289,6 +307,10 @@
     if (data.success) {
       toast.success(data.message);
       expandedFolders[newName.trim()] = expandedFolders[oldName]; // Mantiene el estado de apertura
+      if (selectedFolders.includes(oldName)) {
+        selectedFolders = selectedFolders.filter(f => f !== oldName);
+        selectedFolders.push(newName.trim());
+      }
       await refreshImages();
     } else {
       toast.error(`Error: ${data.error}`);
@@ -389,6 +411,71 @@
       }
     }
     draggedImage = null;
+  }
+
+  // Manejo Drag & Drop de Carpetas (Especialmente para 360)
+  function handleFolderDragStart(e: DragEvent, folder: string) {
+    draggedFolder = folder;
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', folder);
+    }
+  }
+
+  async function handleFolderDrop(e: DragEvent, targetFolder: string) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!draggedFolder || draggedFolder === targetFolder) {
+      draggedFolder = null;
+      return;
+    }
+
+    const currentFolders = Object.keys(activeTab === 'normales' ? normalGroups : threeSixtyGroups);
+    let newOrder = [...folderOrder];
+    
+    for (const f of currentFolders) {
+      if (!newOrder.includes(f)) newOrder.push(f);
+    }
+
+    const fromIndex = newOrder.indexOf(draggedFolder);
+    const toIndex = newOrder.indexOf(targetFolder);
+
+    if (fromIndex > -1 && toIndex > -1) {
+      const [moved] = newOrder.splice(fromIndex, 1);
+      newOrder.splice(toIndex, 0, moved);
+      folderOrder = newOrder;
+
+      try {
+        await fetch('/api/images', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ folderOrder }) });
+      } catch(err) {
+        console.error('Error guardando orden de carpetas:', err);
+      }
+    }
+    draggedFolder = null;
+  }
+
+  // Manejo Drag & Drop de Videos
+  function handleVideoDragStart(e: DragEvent, id: string) {
+    draggedVideo = id;
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', id);
+    }
+  }
+
+  async function handleVideoDrop(e: DragEvent, targetId: string) {
+    e.preventDefault();
+    if (!draggedVideo || draggedVideo === targetId) { draggedVideo = null; return; }
+    const fromIndex = allVideos.findIndex(v => v.id === draggedVideo);
+    const toIndex = allVideos.findIndex(v => v.id === targetId);
+    if (fromIndex > -1 && toIndex > -1) {
+      const newVideos = [...allVideos];
+      const [moved] = newVideos.splice(fromIndex, 1);
+      newVideos.splice(toIndex, 0, moved);
+      allVideos = newVideos;
+      fetch('/api/videos', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ videos: allVideos }) }).catch(console.error);
+    }
+    draggedVideo = null;
   }
 </script>
 
@@ -501,6 +588,18 @@
       </div>
     {/if}
     
+    <!-- Panel de acciones de carpeta -->
+    {#if selectedFolders.length > 0 && (activeTab === 'normales' || activeTab === '360')}
+      <div class="selection-panel folder-selection">
+        <span>{selectedFolders.length} carpeta(s) seleccionada(s)</span>
+        {#if selectedFolders.length === 1}
+          <button class="btn-edit" onclick={() => renameFolder(selectedFolders[0])}>✏️ Renombrar</button>
+        {/if}
+        <button class="btn-delete" onclick={deleteSelectedFolders}>🗑️ Eliminar</button>
+        <button class="btn-cancel" onclick={() => selectedFolders = []}>Cancelar</button>
+      </div>
+    {/if}
+
     <!-- Snippet solo para el contenido interno. Esto permite que animate:flip actúe sobre el wrapper <div> externo de forma segura -->
     {#snippet imageCardInner(img: string)}
       <img src={img} alt="Miniatura" loading="lazy" draggable="false" />
@@ -517,18 +616,32 @@
 
     <!-- Nuevo Snippet para la estructura de Carpeta / Acordeón -->
     {#snippet folderAccordion(folderName: string, images: string[], is360: boolean)}
-      <div class="folder-container">
-        <div class="folder-header" onclick={() => expandedFolders[folderName] = !expandedFolders[folderName]} role="button" tabindex="0" onkeydown={(e) => e.key === 'Enter' && (expandedFolders[folderName] = !expandedFolders[folderName])}>
+      <div class="folder-container {draggedFolder === folderName ? 'dragging-folder' : ''}">
+        <div class="folder-header {selectedFolders.includes(folderName) ? 'selected' : ''}"
+             draggable="true"
+             ondragstart={(e) => handleFolderDragStart(e, folderName)}
+             ondrop={(e) => handleFolderDrop(e, folderName)}
+             ondragover={(e) => e.preventDefault()}
+             onclick={() => expandedFolders[folderName] = !expandedFolders[folderName]} role="button" tabindex="0" onkeydown={(e) => e.key === 'Enter' && (expandedFolders[folderName] = !expandedFolders[folderName])}>
           <div class="folder-info">
+            <div class="drag-handle" title="Arrastrar para ordenar" onclick={(e) => e.stopPropagation()} role="presentation" onkeydown={(e) => e.stopPropagation()}>☰</div>
+            {#if folderName !== 'Raíz'}
+              <input type="checkbox" checked={selectedFolders.includes(folderName)} 
+                     onclick={(e) => { 
+                       e.stopPropagation(); 
+                       if (selectedFolders.includes(folderName)) {
+                         selectedFolders = selectedFolders.filter(f => f !== folderName);
+                       } else {
+                         selectedFolders = [...selectedFolders, folderName];
+                       }
+                     }}
+                     style="cursor: pointer; width: 16px; height: 16px; margin: 0 5px;" title="Seleccionar carpeta" />
+            {/if}
             <span class="folder-icon">{expandedFolders[folderName] ? '📂' : '📁'}</span>
             <h3>{folderName}</h3>
             <span class="image-count">({images.length} imgs)</span>
           </div>
           <div class="folder-actions" onclick={(e) => e.stopPropagation()} role="presentation" onkeydown={(e) => e.stopPropagation()}>
-            {#if folderName !== 'Raíz'}
-              <button class="btn-icon" onclick={() => renameFolder(folderName, is360)} title="Renombrar Carpeta">✏️</button>
-              <button class="btn-icon danger" onclick={() => deleteFolder(folderName, is360)} title="Eliminar Carpeta y su contenido">🗑️</button>
-            {/if}
             <span class="chevron" style="transform: {expandedFolders[folderName] ? 'rotate(180deg)' : 'rotate(0)'}">▼</span>
           </div>
         </div>
@@ -558,9 +671,11 @@
 
     <!-- Renderizamos las imágenes utilizando el diseño de acordeón dinámico -->
     {#if activeTab === 'normales'}
-      {#each Object.entries(normalGroups) as [folderName, images]}
-        {@render folderAccordion(folderName, images, false)}
-      {/each}
+      <div class="folders-grid">
+        {#each Object.entries(normalGroups) as [folderName, images]}
+          {@render folderAccordion(folderName, images, false)}
+        {/each}
+      </div>
     {:else if activeTab === 'inicio'}
       {#if validSliderImages.length === 0}
         <p style="text-align: center; color: #888; margin-top: 2rem;">No hay imágenes seleccionadas para el slider. Ve a "Imágenes Normales" y selecciona tus favoritas (⭐).</p>
@@ -586,19 +701,25 @@
     {:else if activeTab === 'videos'}
       <div class="admin-gallery">
         {#each allVideos as video (video.id)}
-          <div class="image-card" style="border: 1px solid #444;">
-            <img src={`https://img.youtube.com/vi/${video.id}/hqdefault.jpg`} alt="Video Miniatura" loading="lazy" />
+          <div class="image-card {draggedVideo === video.id ? 'dragging' : ''}" 
+               draggable="true"
+               ondragstart={(e) => handleVideoDragStart(e, video.id)}
+               ondragover={(e) => e.preventDefault()}
+               ondrop={(e) => handleVideoDrop(e, video.id)}
+               style="border: 1px solid #444;">
+            <img src={`https://img.youtube.com/vi/${video.id}/hqdefault.jpg`} alt="Video Miniatura" draggable="false" loading="lazy" />
             <div class="image-overlay" style="opacity: 1; background: transparent; justify-content: flex-end; padding-bottom: 10px;">
-              <!-- Overlay siempre visible en videos para el botón borrar -->
               <button type="button" class="btn-delete" style="box-shadow: 0 4px 6px rgba(0,0,0,0.8);" onclick={() => deleteVideo(video.id)}>🗑️ Borrar</button>
             </div>
           </div>
         {/each}
       </div>
     {:else}
-      {#each Object.entries(threeSixtyGroups) as [folderName, images]}
-        {@render folderAccordion(folderName, images, true)}
-      {/each}
+      <div class="folders-grid">
+        {#each Object.entries(threeSixtyGroups) as [folderName, images]}
+          {@render folderAccordion(folderName, images, true)}
+        {/each}
+      </div>
     {/if}
 
     <!-- Modal de Selección de Subida -->
@@ -664,23 +785,30 @@
   
   .selection-panel { background: #333; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; }
   .selection-panel span { font-weight: bold; color: white; margin-right: auto; }
+  .folder-selection { background: #1b281e; border: 1px solid var(--primary-green); }
   .btn-cancel { background: transparent; color: #ccc; border: 1px solid #555; padding: 8px 15px; border-radius: 4px; cursor: pointer; transition: background 0.3s; }
   .btn-cancel:hover { background: #444; color: white; }
+  .btn-edit { background: #1976d2; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; transition: background 0.2s;}
+  .btn-edit:hover { background: #1565c0; }
 
   .gallery-title { border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
   
-  .folder-container { background: #1a1a1a; border-radius: 8px; margin-bottom: 15px; overflow: hidden; border: 1px solid #333; }
+  .folders-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 400px), 1fr)); gap: 20px; align-items: start; margin-bottom: 20px; }
+  .folder-container { background: #1a1a1a; border-radius: 8px; overflow: hidden; border: 1px solid #333; transition: transform 0.2s; }
+  .folder-container.dragging-folder { opacity: 0.5; border: 2px dashed var(--primary-green); }
   .folder-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; cursor: pointer; background: #222; transition: background 0.2s; user-select: none; }
+  .folder-header.selected { background: #243324; border-left: 4px solid var(--primary-green); padding-left: 16px; }
   .folder-header:hover { background: #2a2a2a; }
   .folder-info { display: flex; align-items: center; gap: 10px; }
+  .drag-handle { cursor: grab; font-size: 1.2rem; color: #888; display: flex; align-items: center; justify-content: center; padding: 0 5px; }
+  .drag-handle:hover { color: white; }
+  .drag-handle:active { cursor: grabbing; }
   .folder-info h3 { margin: 0; font-size: 1.1rem; color: #fff; text-transform: capitalize;}
   .image-count { color: #888; font-size: 0.9rem; }
   .folder-actions { display: flex; align-items: center; gap: 10px; }
-  .btn-icon { background: none; border: none; font-size: 1.2rem; cursor: pointer; padding: 5px; border-radius: 4px; transition: background 0.2s; display: flex; align-items: center; justify-content: center;}
-  .btn-icon:hover { background: #444; }
-  .btn-icon.danger:hover { background: #d32f2f; }
   .chevron { margin-left: 10px; color: #888; font-size: 0.9rem; transition: transform 0.3s ease; display: inline-block; }
   .folder-content { padding: 20px; border-top: 1px solid #333; }
+  .folder-content .admin-gallery { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
   
   .admin-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
   .image-card { position: relative; border-radius: 8px; overflow: hidden; aspect-ratio: 1; background: #111; cursor: pointer; transition: transform 0.2s, border 0.2s; border: 2px solid transparent; }

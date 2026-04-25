@@ -16,11 +16,7 @@ export const GET: RequestHandler = async ({ setHeaders }) => {
     });
     try {
         const videos = await dbApi.getVideos();
-        // Ordenar por fecha de creación (si no existe 'createdAt' en los viejos, asume fecha 0)
-        const sortedVideos = [...videos].sort((a, b) => 
-            new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime()
-        );
-        return json({ success: true, videos: sortedVideos });
+        return json({ success: true, videos });
     } catch (e: any) {
         return json({ success: false, error: 'No se pudo leer la base de datos de videos.' }, { status: 500 });
     }
@@ -46,6 +42,18 @@ export const POST: RequestHandler = async ({ request }) => {
         return json({ success: true, message: 'Video agregado con éxito.', video: newVideo });
     } catch (e: any) {
         if (e.status) return json({ success: false, error: e.body.message }, { status: e.status });
+        return json({ success: false, error: e.message || 'Error desconocido' }, { status: 500 });
+    }
+};
+
+export const PATCH: RequestHandler = async ({ request }) => {
+    try {
+        const { videos } = await request.json();
+        if (!videos || !Array.isArray(videos)) throw error(400, 'Formato inválido.');
+
+        await dbApi.updateVideosOrder(videos);
+        return json({ success: true, message: 'Orden de videos guardado.' });
+    } catch (e: any) {
         return json({ success: false, error: e.message || 'Error desconocido' }, { status: 500 });
     }
 };

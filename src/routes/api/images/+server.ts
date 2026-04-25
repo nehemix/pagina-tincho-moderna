@@ -1,32 +1,24 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import fs from 'fs/promises';
 import path from 'path';
 import { dbApi } from '$lib/lowdb';
+import { Storage } from '@google-cloud/storage';
+import { env } from '$env/dynamic/private';
 
-// Las imágenes se guardarán en la carpeta `static/images`
-const UPLOAD_DIR = 'static/images';
-
-// Función para obtener todos los archivos de un directorio de forma recursiva
-async function getFiles(dir: string): Promise<string[]> {
-    try {
-        const dirents = await fs.readdir(dir, { withFileTypes: true });
-        const files = await Promise.all(
-            dirents.map((dirent) => {
-                const res = path.resolve(dir, dirent.name);
-                return dirent.isDirectory() ? getFiles(res) : res;
-            })
-        );
-        return Array.prototype.concat(...files);
-    } catch (e: any) {
-        // Si el directorio no existe, lo creamos y devolvemos un array vacío.
-        if (e.code === 'ENOENT') {
-            await fs.mkdir(dir, { recursive: true });
-            return [];
-        }
-        throw e;
+// Configuración de Google Cloud Storage
+// Asegúrate de definir estas variables en tu archivo .env
+const storage = new Storage({
+    projectId: env.GCP_PROJECT_ID,
+    credentials: {
+        client_email: env.GCP_CLIENT_EMAIL,
+        // Reemplaza los saltos de línea escapados si vienen del .env
+        private_key: env.GCP_PRIVATE_KEY?.replace(/\\n/g, '\n'),
     }
-}
+});
+
+const BUCKET_NAME = env.GCS_BUCKET_NAME || 'tu-bucket-de-imagenes';
+const bucket = storage.bucket(BUCKET_NAME);
+const GCS_PUBLIC_URL = env.CDN_PUBLIC_URL || `https://storage.googleapis.com/${BUCKET_NAME}`;
 
 // GET /api/images -> Devuelve una lista de todas las imágenes
 export const GET: RequestHandler = async ({ url, setHeaders }) => {
@@ -37,9 +29,6 @@ export const GET: RequestHandler = async ({ url, setHeaders }) => {
     });
 
     try {
-        const baseDir = path.resolve(UPLOAD_DIR);
-        await fs.mkdir(baseDir, { recursive: true }); // Asegura que el directorio base exista
-
         const folderFilter = url.searchParams.get('folder')?.toLowerCase();
         const limitParam = url.searchParams.get('limit');
         const pageParam = url.searchParams.get('page');
@@ -49,31 +38,28 @@ export const GET: RequestHandler = async ({ url, setHeaders }) => {
         // Interceptamos la petición de 'inicio' para devolver la lista guardada en la base de datos
         if (folderFilter === 'inicio') {
             const sliderImages = await dbApi.getSliderImages();
-            return json({ success: true, images: sliderImages, total: sliderImages.length, page, limit });
+            // Transformamos las rutas a URLs públicas de GCS si no son links externos
+            const sliderUrls = sliderImages.map(p => p.startsWith('http') ? p : `${GCS_PUBLIC_URL}${p}`);
+            return json({ success: true, images: sliderUrls, total: sliderImages.length, page, limit });
         }
 
-        // Escaneo selectivo: Solo leer el directorio solicitado en lugar de escanear todo el disco
-        let searchDir = baseDir;
+        let searchPrefix = 'images/';
         if (folderFilter) {
-            const safeFolder = path.normalize(folderFilter).replace(/^(\.\.[\/\\])+/, '');
-            searchDir = path.join(baseDir, safeFolder);
+            const safeFolder = path.normalize(folderFilter).replace(/^(\.\.[\/\\])+/, '').replace(/\\/g, '/');
+            searchPrefix = `images/${safeFolder}/`;
         }
 
-        let allFiles: string[] = [];
-        try {
-            allFiles = await getFiles(searchDir);
-        } catch (err) {
-            allFiles = []; // Si la carpeta solicitada no existe, no rompemos la app
-        }
+        // Obtener los archivos de GCS
+        const [files] = await bucket.getFiles({ prefix: searchPrefix });
 
-        // Filtra por extensiones de imagen y formatea las rutas para la web
-        let images = allFiles
-            .filter(file => /\.(jpg|jpeg|png|webp|gif|avif|svg)$/i.test(file))
-            .map(file => path.relative(path.resolve('static'), file).replace(/\\/g, '/'))
-            .map(file => `/${file}`); // Asegura que la ruta empiece con '/'
+        // Filtra por extensiones de imagen y mantiene un formato de ruta local (ej. /images/...)
+        let imagesPaths = files
+            .map(file => file.name)
+            .filter(name => /\.(jpg|jpeg|png|webp|gif|avif|svg)$/i.test(name))
+            .map(name => `/${name}`); 
 
         if (folderFilter) {
-            images = images.filter(img => img.toLowerCase().includes(`/${folderFilter}/`));
+            imagesPaths = imagesPaths.filter(img => img.toLowerCase().includes(`/${folderFilter}/`));
         }
 
         // Obtener orden desde lowdb
@@ -81,7 +67,7 @@ export const GET: RequestHandler = async ({ url, setHeaders }) => {
         const folderOrder = await dbApi.getFolderOrder();
         
         if (order.length > 0) {
-            images.sort((a, b) => {
+            imagesPaths.sort((a, b) => {
                 const indexA = order.indexOf(a);
                 const indexB = order.indexOf(b);
                 if (indexA === -1 && indexB === -1) return a.localeCompare(b);
@@ -91,18 +77,21 @@ export const GET: RequestHandler = async ({ url, setHeaders }) => {
             });
         }
 
-        const total = images.length;
+        const total = imagesPaths.length;
 
         // Aplicar paginación real a nivel backend para no saturar la red con JSONs inmensos
         if (limit > 0) {
             const startIndex = (page - 1) * limit;
-            images = images.slice(startIndex, startIndex + limit);
+            imagesPaths = imagesPaths.slice(startIndex, startIndex + limit);
         }
 
-        return json({ success: true, images, folderOrder, total, page, limit });
+        // Convertir las rutas a URLs de GCS o Cloudflare CDN justo antes de enviarlas al cliente
+        const imagesUrls = imagesPaths.map(p => `${GCS_PUBLIC_URL}${p}`);
+
+        return json({ success: true, images: imagesUrls, folderOrder, total, page, limit });
     } catch (e: any) {
-        console.error("Error al leer el directorio de imágenes:", e);
-        return json({ success: false, error: 'No se pudo leer el directorio de imágenes.' }, { status: 500 });
+        console.error("Error al obtener imágenes de GCS:", e);
+        return json({ success: false, error: 'No se pudieron obtener las imágenes del Bucket.' }, { status: 500 });
     }
 };
 
@@ -131,19 +120,22 @@ export const POST: RequestHandler = async ({ request }) => {
             return json({ success: false, error: 'No se han subido archivos válidos. Solo se permite formato AVIF.' }, { status: 400 });
         }
         
-        // Medida de seguridad para evitar que se escriba fuera del directorio de imágenes
-        const safeBaseFolder = baseFolder ? path.normalize(baseFolder).replace(/^(\.\.[\/\\])+/, '') : '';
+        const safeBaseFolder = baseFolder ? path.normalize(baseFolder).replace(/^(\.\.[\/\\])+/, '').replace(/\\/g, '/') : '';
 
         for (const upload of validUploads) {
-            const fullRelativePath = path.join(safeBaseFolder, upload.relativePath);
-            const safeRelativePath = path.normalize(fullRelativePath).replace(/^(\.\.[\/\\])+/, '');
-            const finalPath = path.join(UPLOAD_DIR, safeRelativePath);
+            const safeRelativePath = path.normalize(upload.relativePath).replace(/^(\.\.[\/\\])+/, '').replace(/\\/g, '/');
+            const finalPath = `images/${safeBaseFolder ? safeBaseFolder + '/' : ''}${safeRelativePath}`;
 
-            // Asegura que todo el árbol de directorios destino exista
-            await fs.mkdir(path.dirname(finalPath), { recursive: true });
-
+            const file = bucket.file(finalPath);
             const buffer = Buffer.from(await upload.file.arrayBuffer());
-            await fs.writeFile(finalPath, buffer);
+            
+            await file.save(buffer, {
+                resumable: false,
+                metadata: {
+                    contentType: upload.file.type,
+                    cacheControl: 'public, max-age=31536000',
+                }
+            });
         }
 
         return json({ success: true, message: `${validUploads.length} imagen(es) subida(s) con éxito.` });
@@ -158,19 +150,25 @@ export const PUT: RequestHandler = async ({ request }) => {
         const { oldFolder, newFolder } = await request.json();
         if (!oldFolder || !newFolder) throw error(400, 'Faltan parámetros para renombrar.');
 
-        // Limpieza de rutas para evitar subida fuera del directorio
-        const safeOldFolder = path.normalize(oldFolder).replace(/^(\.\.[\/\\])+/, '');
-        const safeNewFolder = path.normalize(newFolder).replace(/^(\.\.[\/\\])+/, '');
+        const safeOldFolder = path.normalize(oldFolder).replace(/^(\.\.[\/\\])+/, '').replace(/\\/g, '/');
+        const safeNewFolder = path.normalize(newFolder).replace(/^(\.\.[\/\\])+/, '').replace(/\\/g, '/');
         
-        const oldPath = path.join(UPLOAD_DIR, safeOldFolder);
-        const newPath = path.join(UPLOAD_DIR, safeNewFolder);
+        const oldPrefix = `images/${safeOldFolder}/`;
+        const newPrefix = `images/${safeNewFolder}/`;
 
         // Renombramos la ruta base en lowdb para las imágenes afectadas
-        const oldDbPattern = `/${safeOldFolder}/`;
-        const newDbPattern = `/${safeNewFolder}/`;
+        const oldDbPattern = `/${oldPrefix}`;
+        const newDbPattern = `/${newPrefix}`;
         await dbApi.renameImageFolderInOrder(oldDbPattern, newDbPattern);
 
-        await fs.rename(oldPath, newPath);
+        // En GCS no hay "renombrar carpeta", se debe copiar y eliminar cada objeto
+        const [files] = await bucket.getFiles({ prefix: oldPrefix });
+        for (const file of files) {
+            const newName = file.name.replace(oldPrefix, newPrefix);
+            await file.copy(bucket.file(newName));
+            await file.delete();
+        }
+        
         return json({ success: true, message: 'Carpeta renombrada con éxito.' });
     } catch (e: any) {
         console.error("Error al renombrar la carpeta:", e);
@@ -183,14 +181,15 @@ export const PATCH: RequestHandler = async ({ request }) => {
     try {
         const body = await request.json();
         if (body.order && Array.isArray(body.order)) {
-            
-            // Actualizar arreglo de orden en lowdb
-            await dbApi.updateImageOrder(body.order);
+            // Normalizamos las rutas quitando la URL del CDN/GCS
+            const normalizedOrder = body.order.map((p: string) => p.replace(GCS_PUBLIC_URL, ''));
+            await dbApi.updateImageOrder(normalizedOrder);
             
             return json({ success: true, message: 'Orden guardado con éxito.' });
         }
         if (body.sliderImages && Array.isArray(body.sliderImages)) {
-            await dbApi.updateSliderImages(body.sliderImages);
+            const normalizedSlider = body.sliderImages.map((p: string) => p.replace(GCS_PUBLIC_URL, ''));
+            await dbApi.updateSliderImages(normalizedSlider);
             return json({ success: true, message: 'Slider actualizado con éxito.' });
         }
         if (body.folderOrder && Array.isArray(body.folderOrder)) {
@@ -211,43 +210,43 @@ export const DELETE: RequestHandler = async ({ request }) => {
 
         // NUEVO: Si se recibe una ruta de carpeta, la borramos entera
         if (body.folderPath) {
-            const safeFolderPath = path.normalize(body.folderPath).replace(/^(\.\.[\/\\])+/, '');
-            const dirPath = path.join('static', 'images', safeFolderPath);
+            const safeFolderPath = path.normalize(body.folderPath).replace(/^(\.\.[\/\\])+/, '').replace(/\\/g, '/');
+            const dirPrefix = `images/${safeFolderPath}/`;
             
             // Eliminar registros afectados en lowdb
-            await dbApi.removeFolderFromOrder(`/${safeFolderPath}/`);
+            await dbApi.removeFolderFromOrder(`/${dirPrefix}`);
             
-            await fs.rm(dirPath, { recursive: true, force: true });
+            await bucket.deleteFiles({ prefix: dirPrefix });
             return json({ success: true, message: `Carpeta "${safeFolderPath}" y su contenido eliminados.` });
         }
 
         // Acepta un array de rutas o una sola ruta (para compatibilidad)
-        const pathsToDelete: string[] = body.imagePaths || (body.imagePath ? [body.imagePath] : []);
+        let pathsToDelete: string[] = body.imagePaths || (body.imagePath ? [body.imagePath] : []);
 
         if (pathsToDelete.length === 0) {
             throw error(400, 'No se han proporcionado rutas de imágenes para eliminar.');
         }
+        
+        // Normalizar a rutas relativas sin la URL pública
+        pathsToDelete = pathsToDelete.map(p => p.replace(GCS_PUBLIC_URL, ''));
 
         let deletedCount = 0;
         
-        // Eliminar metadata de lowdb
         await dbApi.removeImagesFromOrder(pathsToDelete);
 
         for (const imgPath of pathsToDelete) {
-            // Medida de seguridad para evitar que se borren archivos fuera de `static`
-            const filePath = path.join('static', imgPath);
-            const safePath = path.normalize(filePath);
+            const gcsPath = imgPath.replace(/^\//, ''); // Quita el '/' inicial
             
-            if (!safePath.startsWith('static' + path.sep)) {
-                 console.warn('Intento de borrar archivo no permitido:', safePath);
+            if (!gcsPath.startsWith('images/')) {
+                 console.warn('Intento de borrar archivo no permitido:', gcsPath);
                  continue;
             }
 
             try {
-                await fs.unlink(safePath);
+                await bucket.file(gcsPath).delete({ ignoreNotFound: true });
                 deletedCount++;
             } catch (err: any) {
-                if (err.code !== 'ENOENT') throw err; // Si el error no es "no existe", lo lanzamos
+                console.error(`Error borrando ${gcsPath}:`, err);
             }
         }
 

@@ -6,8 +6,7 @@ services:
     container_name: pagina-tincho-app
     init: true
     restart: unless-stopped
-    ports:
-      - "3000:3000"
+    # Ya no exponemos puertos. Cloudflare se comunicará internamente por la red de Docker.
     environment:
       - NODE_ENV=production
       - HOST=0.0.0.0
@@ -16,6 +15,13 @@ services:
       - ORIGIN=https://martinmangudo.duckdns.org
       # Dile a SvelteKit que lea el protocolo real que le pasa Nginx (HTTPS)
       - PROTOCOL_HEADER=x-forwarded-proto
+      # Configuración de Google Cloud Storage
+      - GCS_BUCKET_NAME=${GCS_BUCKET_NAME}
+      - GCP_PROJECT_ID=${GCP_PROJECT_ID}
+      - GCP_CLIENT_EMAIL=${GCP_CLIENT_EMAIL}
+      - GCP_PRIVATE_KEY=${GCP_PRIVATE_KEY}
+      # Opcional: URL de Cloudflare u otro CDN para servir las imágenes
+      - CDN_PUBLIC_URL=${CDN_PUBLIC_URL}
     # Seguridad: Evita que el contenedor o sus hijos obtengan nuevos privilegios
     security_opt:
       - no-new-privileges:true
@@ -27,5 +33,12 @@ services:
     volumes:
       # Persistencia para la base de datos (LowDB) y las imágenes subidas
       - ./data:/app/data
-      - ./static/images:/app/static/images
-      - ./static/images:/app/build/client/images
+
+  # Túnel de Cloudflare que reemplaza a Nginx
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflare-tunnel
+    restart: unless-stopped
+    command: tunnel run
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}

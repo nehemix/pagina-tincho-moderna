@@ -220,7 +220,9 @@
     display: flex; 
     justify-content: center; 
     align-items: center; 
-    padding: 0; 
+    padding: 0 0 4px 0; /* Ajuste óptico para centrar la X verticalmente */
+    line-height: 1;
+    box-sizing: border-box;
     backdrop-filter: blur(5px); /* Efecto cristal para contraste en fotos claras */
     transition: background 0.3s, transform 0.3s; 
     z-index: 4010; 
@@ -246,6 +248,12 @@
     backdrop-filter: blur(5px);
     transition: background 0.3s;
     z-index: 4010;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0 0 2px 0; /* Ajuste óptico para centrar las flechas */
+    line-height: 1;
+    box-sizing: border-box;
   }
   .nav-btn:hover { background: rgba(255, 255, 255, 0.3); }
   .nav-btn.prev { left: 20px; }

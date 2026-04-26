@@ -4,5 +4,4 @@ Disallow: /admin/
 Disallow: /api/
 Allow: /
 
-# Sitemap (Recomendado incluir la ruta real si cuentas con uno)
-# Sitemap: https://tudominio.com/sitemap.xml
+# Sitemap: https://martinmangudo.duckdns.org/sitemap.xml

@@ -23,8 +23,8 @@ async function createAdmin() {
 	try {
 		// Leemos la base de datos actual directamente
 		const fileData = await fs.readFile(dbPath, 'utf-8');
-		// Si el archivo está vacío, inicializamos la estructura por defecto
-		const db = fileData.trim() ? JSON.parse(fileData) : { videos: [], imageOrder: [], users: [], sessions: [] };
+		// Si el archivo está vacío, inicializamos la estructura completa por defecto
+		const db = fileData.trim() ? JSON.parse(fileData) : { videos: [], imageOrder: [], folderOrder: [], sliderImages: [], users: [], sessions: [] };
 
 		// Por si la base de datos es antigua y aún no tiene el array de users
 		if (!db.users) db.users = [];
@@ -42,7 +42,7 @@ async function createAdmin() {
 		// Si el archivo db.json aún no existe, lo creamos desde cero
 		if (err.code === 'ENOENT') {
 			await fs.mkdir(path.resolve('data'), { recursive: true });
-			const newDb = { videos: [], imageOrder: [], users: [user], sessions: [] };
+			const newDb = { videos: [], imageOrder: [], folderOrder: [], sliderImages: [], users: [user], sessions: [] };
 			await fs.writeFile(dbPath, JSON.stringify(newDb, null, 2));
 			console.log(`✅ Base de datos inicializada y usuario (${username}) creado con éxito.`);
 		} else {

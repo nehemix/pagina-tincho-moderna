@@ -2,7 +2,7 @@ import fs from 'fs/promises';
 import path from 'path';
 
 async function deleteUser() {
-	const usernameToDelete = 'nehemi'; // Cambia esto por el nombre de usuario a borrar
+	const usernameToDelete = 'martin'; // Cambia esto por el nombre de usuario a borrar
 
 	// Ruta directa a la base de datos
 	const dbPath = path.resolve('data', 'db.json');

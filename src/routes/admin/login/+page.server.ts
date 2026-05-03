@@ -65,7 +65,7 @@ export const actions: Actions = {
 			path: '/',
 			httpOnly: true,
 			sameSite: 'strict',
-			// secure: process.env.NODE_ENV === 'production',
+			secure: false, // <-- Forzamos a falso para permitir HTTP temporalmente
 			maxAge: 60 * 60 * 24 * 7 // 7 días
 		});
 

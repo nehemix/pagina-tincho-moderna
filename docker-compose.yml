@@ -7,15 +7,17 @@ services:
     init: true
     restart: unless-stopped
     ports:
-      - "80:3000"
+      - "3000:3000"
     environment:
       - NODE_ENV=production
       - HOST=0.0.0.0
       # SvelteKit puede bloquear envíos de formularios por protección CSRF. 
-      # Configura esto con la URL exacta desde donde pruebas (ej. http://localhost:3000 en local o tu dominio en prod)
+      # IMPORTANTE: Cambia esto a tu dominio real (incluyendo https://)
       - ORIGIN=https://nehemi.online
-      # Dile a SvelteKit que lea el protocolo real que le pasa Nginx (HTTPS)
+      # Dile a SvelteKit que lea el protocolo real que le pasa Cloudflare (HTTPS)
       - PROTOCOL_HEADER=x-forwarded-proto
+      # Dile a SvelteKit de qué cabecera leer la IP real (necesario para el rate limit detrás de Cloudflare)
+      - ADDRESS_HEADER=CF-Connecting-IP
     # Seguridad: Evita que el contenedor o sus hijos obtengan nuevos privilegios
     security_opt:
       - no-new-privileges:true
@@ -29,4 +31,3 @@ services:
       - ./data:/app/data
       - ./static/images:/app/static/images
       - ./static/images:/app/build/client/images
-

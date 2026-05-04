@@ -2,7 +2,17 @@ import fs from 'fs/promises';
 import path from 'path';
 
 async function deleteUser() {
-	const usernameToDelete = 'martin'; // Cambia esto por el nombre de usuario a borrar
+	const args = process.argv.slice(2);
+
+	const usernameToDelete = process.env.ADMIN_USER || args[0];
+
+	if (!usernameToDelete) {
+		console.error('❌ Error: Falta el nombre de usuario.');
+		console.error('👉 Uso seguro: ADMIN_USER=usuario bun run delete-user.ts');
+		console.error('👉 Uso CLI: bun run delete-user.ts <usuario>');
+		process.exit(1);
+	}
+
 
 	// Ruta directa a la base de datos
 	const dbPath = path.resolve('data', 'db.json');

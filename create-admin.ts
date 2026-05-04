@@ -5,8 +5,18 @@ import { randomUUID } from 'crypto';
 declare const Bun: any;
 
 async function createAdmin() {
-	const username = 'martin'; // Cambia esto
-	const password = '1234'; // Cambia esto
+	const args = process.argv.slice(2);
+	
+	const username = process.env.ADMIN_USER || args[0];
+	const password = process.env.ADMIN_PASSWORD || args[1];
+
+	if (!username || !password) {
+		console.error('❌ Error: Faltan credenciales.');
+		console.error('👉 Uso seguro: ADMIN_USER=usuario ADMIN_PASSWORD=clave bun run create-admin.ts');
+		console.error('👉 Uso CLI: bun run create-admin.ts <usuario> <contraseña>');
+		process.exit(1);
+	}
+
 
 	console.log('Hasheando contraseña...');
 	const passwordHash = await Bun.password.hash(password);

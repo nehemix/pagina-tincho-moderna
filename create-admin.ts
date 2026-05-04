@@ -1,19 +1,28 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { randomUUID } from 'crypto';
+import * as readline from 'readline/promises';
 
 declare const Bun: any;
 
 async function createAdmin() {
 	const args = process.argv.slice(2);
 	
-	const username = process.env.ADMIN_USER || args[0];
-	const password = process.env.ADMIN_PASSWORD || args[1];
+	let username = process.env.ADMIN_USER || args[0];
+	let password = process.env.ADMIN_PASSWORD || args[1];
 
 	if (!username || !password) {
-		console.error('❌ Error: Faltan credenciales.');
-		console.error('👉 Uso seguro: ADMIN_USER=usuario ADMIN_PASSWORD=clave bun run create-admin.ts');
-		console.error('👉 Uso CLI: bun run create-admin.ts <usuario> <contraseña>');
+		console.log('ℹ️  No se detectaron credenciales en variables de entorno o argumentos. Iniciando modo interactivo...');
+		const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+		
+		if (!username) username = await rl.question('👤 Ingrese el nuevo nombre de usuario: ');
+		if (!password) password = await rl.question('🔑 Ingrese la nueva contraseña: ');
+		
+		rl.close();
+	}
+
+	if (!username || !password) {
+		console.error('❌ Error: El usuario y la contraseña son obligatorios.');
 		process.exit(1);
 	}
 

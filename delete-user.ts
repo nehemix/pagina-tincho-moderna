@@ -1,15 +1,22 @@
 import fs from 'fs/promises';
 import path from 'path';
+import * as readline from 'readline/promises';
 
 async function deleteUser() {
 	const args = process.argv.slice(2);
 
-	const usernameToDelete = process.env.ADMIN_USER || args[0];
+	let usernameToDelete = process.env.ADMIN_USER || args[0];
 
 	if (!usernameToDelete) {
-		console.error('❌ Error: Falta el nombre de usuario.');
-		console.error('👉 Uso seguro: ADMIN_USER=usuario bun run delete-user.ts');
-		console.error('👉 Uso CLI: bun run delete-user.ts <usuario>');
+		console.log('ℹ️  No se detectó el usuario en variables de entorno o argumentos. Iniciando modo interactivo...');
+		const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+		
+		usernameToDelete = await rl.question('🗑️  Ingrese el nombre del usuario a eliminar: ');
+		rl.close();
+	}
+
+	if (!usernameToDelete) {
+		console.error('❌ Error: El nombre de usuario es obligatorio.');
 		process.exit(1);
 	}
 

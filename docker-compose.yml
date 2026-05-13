@@ -13,7 +13,7 @@ services:
       - HOST=0.0.0.0
       # SvelteKit puede bloquear envíos de formularios por protección CSRF. 
       # IMPORTANTE: Cambia esto a tu dominio real (incluyendo https://)
-      - ORIGIN=https://nehemi.online
+      - ORIGIN=https://martin.nehemi.online
       # Dile a SvelteKit que lea el protocolo real que le pasa Cloudflare (HTTPS)
       - PROTOCOL_HEADER=x-forwarded-proto
       # Dile a SvelteKit de qué cabecera leer la IP real (necesario para el rate limit detrás de Cloudflare)

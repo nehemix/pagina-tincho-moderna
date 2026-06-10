@@ -544,8 +544,8 @@
       {#if activeTab === 'videos'}
         <form onsubmit={addVideo} class="upload-form">
           <div class="input-group">
-            <label for="videoUrl">Enlace de YouTube:</label>
-            <input type="url" id="videoUrl" bind:value={videoUrl} required />
+            <label for="videoUrl">Enlace de YouTube (Video o Short):</label>
+            <input type="url" id="videoUrl" bind:value={videoUrl} placeholder="Ej: youtube.com/shorts/..." required />
           </div>
           <button type="submit" class="btn-upload" disabled={isUploading}>
             {isUploading ? 'Procesando...' : 'Agregar Video'}
@@ -603,7 +603,7 @@
 
     <!-- Galería Administrativa -->
     <h2 class="gallery-title">
-      {activeTab === 'normales' ? 'Tus Fotografías' : activeTab === '360' ? 'Tus Fotogramas 360°' : activeTab === 'videos' ? 'Tus Videos (YouTube)' : 'Fotos del Slider de Inicio'}
+      {activeTab === 'normales' ? 'Tus Fotografías' : activeTab === '360' ? 'Tus Fotogramas 360°' : activeTab === 'videos' ? 'Tus Videos y Shorts (YouTube)' : 'Fotos del Slider de Inicio'}
     </h2>
 
     <!-- Panel de acciones en lote -->

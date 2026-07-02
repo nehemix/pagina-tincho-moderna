@@ -35,13 +35,23 @@
       </div>
       
       <!-- Tarjeta 3: Email -->
-      <div class="contact-card">
+      <div class="contact-card email-card">
         <div class="icon-wrapper">
           <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
         </div>
         <h4>E-mail</h4>
         <p><a href="mailto:info@martinmangudo.com.ar">info@martinmangudo.com.ar</a></p>
       </div>
+
+      <!-- Tarjeta 4: Instagram -->
+      <a href="https://www.instagram.com/mmangudofotografo/" target="_blank" rel="noopener noreferrer" class="contact-card instagram-card">
+          <div class="icon-wrapper">
+            <!-- Icono de Instagram -->
+            <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" stroke-linecap="round"></line></svg>
+          </div>
+          <h4>Instagram</h4>
+          <p>@mmangudofotografo</p>
+      </a>
     </div>
 
     <!-- Recomendación PixelSite -->
@@ -129,7 +139,7 @@
 
   .container {
     width: 100%;
-    max-width: 1000px;
+    max-width: 1100px; /* Ensanchado para que entre el mail en una línea en PC */
     margin: 0 auto;
   }
 
@@ -161,18 +171,22 @@
     border-color: rgba(11, 102, 35, 0.5); /* Verde primario con opacidad */
   }
 
-  /* El email se ubica abajo centrado ocupando un poco más de espacio */
-  .contact-card:last-child {
+  .email-card,
+  .instagram-card {
     width: 100%;
-    max-width: 400px;
   }
 
   @media (min-width: 850px) {
     .contact-info { gap: 20px; }
-    .contact-card, .contact-card:last-child {
-      width: calc(33.333% - 13.33px); /* 3 tarjetas por fila en PC */
+    .contact-card {
+      width: calc(25% - 15px); /* 4 tarjetas por fila en PC */
       max-width: none;
       padding: 25px 15px; /* Restaura el padding original en PC/Tablets */
+    }
+
+    /* En escritorio, las tarjetas de email e instagram también ocupan su espacio normal */
+    .email-card, .instagram-card {
+      width: calc(25% - 15px);
     }
   }
 
@@ -205,18 +219,24 @@
     font-size: 0.95rem;
     color: #bbb;
     margin: 0;
-    word-break: break-word; /* Evita que correos muy largos se salgan de la tarjeta */
+    word-break: break-word; /* Permite que el texto largo se divida en varias líneas */
   }
 
   .contact-card a {
-    color: #90ee90;
     text-decoration: none;
+  }
+
+  .contact-card p a {
+    color: #90ee90;
     font-weight: bold;
     transition: color 0.3s;
   }
 
-  .contact-card a:hover {
+  .contact-card p a:hover {
     color: #fff;
+  }
+  .instagram-card p {
+    color: #90ee90; /* Mantiene el color del enlace original */
   }
 
   /* Sección de recomendación */

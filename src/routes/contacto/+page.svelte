@@ -235,8 +235,9 @@
   .contact-card p a:hover {
     color: #fff;
   }
-  .instagram-card p {
-    color: #90ee90; /* Mantiene el color del enlace original */
+  .instagram-card > p {
+    color: #90ee90; /* Mantiene el color del enlace original para el @usuario */
+    font-weight: bold; /* Lo igualamos al del número de teléfono */
   }
 
   /* Sección de recomendación */

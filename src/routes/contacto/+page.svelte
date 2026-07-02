@@ -43,6 +43,17 @@
         <p><a href="mailto:info@martinmangudo.com.ar">info@martinmangudo.com.ar</a></p>
       </div>
     </div>
+
+    <!-- Recomendación PixelSite -->
+    <div class="recommendation">
+      <h4>¿Necesitás una página web profesional?</h4>
+      <p>
+        PixelSite se especializa en crear sitios web a medida, rápidos y modernos.
+      </p>
+      <a href="https://pixelsite.com.ar/" target="_blank" rel="noopener noreferrer" class="cta-button">
+        Visitar PixelSite
+      </a>
+    </div>
   </div>
 </section>
 
@@ -206,5 +217,48 @@
 
   .contact-card a:hover {
     color: #fff;
+  }
+
+  /* Sección de recomendación */
+  .recommendation {
+    margin-top: 40px;
+    padding: 20px;
+    background: rgba(11, 102, 35, 0.1);
+    border: 1px solid rgba(11, 102, 35, 0.2);
+    border-radius: 16px;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+    backdrop-filter: blur(5px);
+  }
+
+  .recommendation h4 {
+    font-size: 1.1rem;
+    color: #fff;
+    margin: 0 0 8px 0;
+  }
+
+  .recommendation p {
+    margin: 0;
+    color: #bbb;
+    font-size: 0.95rem;
+  }
+
+  .cta-button {
+    display: inline-block;
+    margin-top: 15px;
+    padding: 12px 30px;
+    background-color: var(--primary-green);
+    color: #fff;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  }
+
+  .cta-button:hover {
+    background-color: #0f8a2e; /* Un verde ligeramente más brillante */
+    transform: translateY(-2px);
   }
 </style>
